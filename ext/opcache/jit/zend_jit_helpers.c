@@ -2221,11 +2221,3 @@ static void ZEND_FASTCALL zend_jit_post_dec_typed_ref(zval *var_ptr, zend_refere
 		ZVAL_COPY_VALUE(var_ptr, ret);
 	}
 }
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */
