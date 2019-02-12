@@ -53,6 +53,8 @@ PHP                                                                        NEWS
     (Sammy Kaye Powers)
 
 - PDO_OCI:
+  . Support Oracle Database tracing attributes ACTION, MODULE,
+    CLIENT_INFO, and CLIENT_IDENTIFIER. (Cameron Porter)
   . Implemented FR #76908 (PDO_OCI getColumnMeta() not implemented).
     (Valentin Collet, Chris Jones, Remi)
 
@@ -89,5 +91,8 @@ PHP                                                                        NEWS
 
 - Tidy:
   . Added TIDY_TAG_* constants for HTML5 elements. (cmb)
+
+- WDDX:
+  . Deprecated the WDDX extension. (cmb)
 
 <<< NOTE: Insert NEWS from last stable release here prior to actual release! >>>
