@@ -25,6 +25,8 @@ PHP 7.4 UPGRADE NOTES
   . Referencing parent:: inside a class that does not have a parent will now
     generate a compile-time error. Previously the error was only emitted at
     run-time.
+  . get_declared_classes() no longer returns anonymous classes that haven't
+    been instantiated yet.
 
 - Curl:
   . Attempting to serialize a CURLFile class will now generate an exception.
@@ -377,6 +379,9 @@ The following extensions are affected:
 - PCRE:
   . --with-pcre-regex has been removed. Instead --with-external-pcre is provided
     to opt into using an external PCRE library, rather than the bundled one.
+
+- Readline:
+  . --with-libedit no longer accepts a directory.
 
 - GD:
   . --with-gd becomes --enable-gd (whether to enable the extension at all) and
