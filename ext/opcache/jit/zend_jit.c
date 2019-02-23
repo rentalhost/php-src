@@ -2836,6 +2836,11 @@ ZEND_EXT_API int zend_jit_op_array(zend_op_array *op_array, zend_script *script)
 		return FAILURE;
 	}
 
+	/* skip jitting and leaving the executor mode if an extension overwriting the callback prevents it */
+	if (zend_execute_mode_allow_leave != NULL && zend_execute_mode_allow_leave(op_array) == 0) {
+		return SUCCESS;
+	}
+
 	if (zend_jit_trigger == ZEND_JIT_ON_FIRST_EXEC) {
 		zend_op *opline = op_array->opcodes;
 
@@ -2884,6 +2889,11 @@ ZEND_EXT_API int zend_jit_script(zend_script *script)
 
 	if (dasm_ptr == NULL || *dasm_ptr == dasm_end) {
 		return FAILURE;
+	}
+
+	/* skip jitting and leaving the executor mode if an extension overwriting the callback prevents it */
+	if (zend_execute_mode_allow_leave != NULL && zend_execute_mode_allow_leave(&(script->main_op_array)) == 0) {
+		return SUCCESS;
 	}
 
 	checkpoint = zend_arena_checkpoint(CG(arena));

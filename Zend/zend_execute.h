@@ -30,6 +30,7 @@ BEGIN_EXTERN_C()
 struct _zend_fcall_info;
 ZEND_API extern void (*zend_execute_ex)(zend_execute_data *execute_data);
 ZEND_API extern void (*zend_execute_internal)(zend_execute_data *execute_data, zval *return_value);
+ZEND_API extern int (*zend_execute_mode_allow_leave)(zend_op_array *op_array);
 
 void init_executor(void);
 void shutdown_executor(void);
