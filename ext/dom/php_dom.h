@@ -128,6 +128,9 @@ void dom_set_doc_classmap(php_libxml_ref_obj *document, zend_class_entry *basece
 zval *dom_nodelist_read_dimension(zval *object, zval *offset, int type, zval *rv);
 int dom_nodelist_has_dimension(zval *object, zval *member, int check_empty);
 
+void dom_parent_node_prepend(dom_object *context, zval *nodes, int nodesc);
+void dom_parent_node_append(dom_object *context, zval *nodes, int nodesc);
+
 #define REGISTER_DOM_CLASS(ce, name, parent_ce, funcs, entry) \
 INIT_CLASS_ENTRY(ce, name, funcs); \
 ce.create_object = dom_objects_new; \
