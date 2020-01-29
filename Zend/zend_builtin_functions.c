@@ -45,6 +45,7 @@ static ZEND_FUNCTION(get_called_class);
 static ZEND_FUNCTION(get_parent_class);
 static ZEND_FUNCTION(method_exists);
 static ZEND_FUNCTION(property_exists);
+static ZEND_FUNCTION(property_initialized);
 static ZEND_FUNCTION(class_exists);
 static ZEND_FUNCTION(interface_exists);
 static ZEND_FUNCTION(trait_exists);
@@ -107,6 +108,7 @@ static const zend_function_entry builtin_functions[] = { /* {{{ */
 	ZEND_FE(get_parent_class,	arginfo_get_parent_class)
 	ZEND_FE(method_exists,		arginfo_method_exists)
 	ZEND_FE(property_exists,	arginfo_property_exists)
+	ZEND_FE(property_initialized,	arginfo_property_exists)
 	ZEND_FE(class_exists,		arginfo_class_exists)
 	ZEND_FE(interface_exists,	arginfo_interface_exists)
 	ZEND_FE(trait_exists,		arginfo_trait_exists)
@@ -1156,6 +1158,46 @@ ZEND_FUNCTION(method_exists)
 	RETURN_FALSE;
 }
 /* }}} */
+
+ZEND_FUNCTION(property_initialized)
+{
+	zval *object;
+	zend_string *property;
+	zend_class_entry *ce;
+	zend_property_info *prop_info;
+	zval *prop;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zS", &object, &property) == FAILURE) {
+		RETURN_THROWS();
+	}
+
+	if (property == NULL) {
+		RETURN_FALSE;
+	}
+
+	if (Z_TYPE_P(object) == IS_STRING) {
+		ce = zend_lookup_class(Z_STR_P(object));
+		if (!ce) {
+			RETURN_FALSE;
+		}
+	} else if (Z_TYPE_P(object) == IS_OBJECT) {
+		ce = Z_OBJCE_P(object);
+	} else {
+		zend_error(E_WARNING, "First parameter must either be an object or the name of an existing class");
+		RETURN_NULL();
+	}
+
+	prop_info = zend_hash_find_ptr(&ce->properties_info, property);
+
+	if ((prop_info->flags & ZEND_ACC_STATIC) != 0) {
+		prop = &ce->default_static_members_table[prop_info->offset];
+		ZVAL_DEINDIRECT(prop);
+	} else {
+		prop = &ce->default_properties_table[OBJ_PROP_TO_NUM(prop_info->offset)];
+	}
+
+	RETURN_BOOL(!Z_ISUNDEF_P(prop));
+}
 
 /* {{{ proto bool property_exists(mixed object_or_class, string property_name)
    Checks if the object or class has a property */
