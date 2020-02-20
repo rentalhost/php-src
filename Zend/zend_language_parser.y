@@ -320,10 +320,10 @@ attribute_values:
 ;
 
 attribute_list:
-		namespace_name												{ zend_add_attribute($1, NULL); }
-	|	namespace_name '(' attribute_values ')'						{ zend_add_attribute($1, $3); }
-	|	attribute_list ',' namespace_name							{ zend_add_attribute($3, NULL); }
-	|	attribute_list ',' namespace_name '(' attribute_values ')'	{ zend_add_attribute($3, $5); }
+		class_name_reference												{ zend_add_attribute($1, NULL); }
+	|	class_name_reference '(' attribute_values ')'						{ zend_add_attribute($1, $3); }
+	|	attribute_list ',' class_name_reference							{ zend_add_attribute($3, NULL); }
+	|	attribute_list ',' class_name_reference '(' attribute_values ')'	{ zend_add_attribute($3, $5); }
 ;
 
 attribute:

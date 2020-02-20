@@ -16,14 +16,21 @@ namespace Doctrine\ORM {
 		$attrs = $reflClass->getAttributes();
 		foreach ($attrs as $name => &$values) {
 			$name = "Doctrine\\" . $name;
-			$values = new $name(...$values);
+			$values = new $name($values);
 		}
 		return $attrs;
 	}
 }
 
+namespace Doctrine\ORM\Mapping {
+    class Entity {
+    }
+}
+
 namespace {
-	<<ORM\Entity("user")>>
+    use Doctrine\ORM\Mapping as ORM;
+
+	<<ORM\Entity(["tableName" => "user", "repository" => UserRepository::class])>>
 	class User {}
 
 	var_dump(Doctrine\ORM\GetClassAttributes("User"));

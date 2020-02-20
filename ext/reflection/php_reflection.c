@@ -1642,7 +1642,7 @@ ZEND_METHOD(reflection_function, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(fptr);
 	if (fptr->type == ZEND_USER_FUNCTION && fptr->op_array.attributes) {
-		zend_ast_convert_attributes(return_value, fptr->op_array.attributes);
+		zend_ast_convert_attributes(return_value, fptr->op_array.attributes, NULL);
 	} else {
 		array_init(return_value);
 	}
@@ -3645,7 +3645,7 @@ ZEND_METHOD(reflection_class_constant, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ref);
 	if (ref->attributes) {
-		zend_ast_convert_attributes(return_value, ref->attributes);
+		zend_ast_convert_attributes(return_value, ref->attributes, NULL);
 	} else {
 		array_init(return_value);
 	}
@@ -4026,7 +4026,7 @@ ZEND_METHOD(reflection_class, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ce);
 	if (ce->type == ZEND_USER_CLASS && ce->info.user.attributes) {
-		zend_ast_convert_attributes(return_value, ce->info.user.attributes);
+		zend_ast_convert_attributes(return_value, ce->info.user.attributes, NULL);
 	} else {
 		array_init(return_value);
 	}
@@ -5544,7 +5544,7 @@ ZEND_METHOD(reflection_property, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ref);
 	if (ref->prop->attributes) {
-		zend_ast_convert_attributes(return_value, ref->prop->attributes);
+		zend_ast_convert_attributes(return_value, ref->prop->attributes, NULL);
 	} else {
 		array_init(return_value);
 	}

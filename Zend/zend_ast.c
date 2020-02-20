@@ -2119,7 +2119,27 @@ ZEND_API ZEND_COLD zend_string *zend_ast_export(const char *prefix, zend_ast *as
 ZEND_API zend_class_entry *zend_ast_node_ce = NULL;
 ZEND_API zend_class_entry *zend_ast_decl_ce = NULL;
 
-ZEND_API void zend_ast_convert_attributes(zval *ret, HashTable *attributes)
+ZEND_API void zend_ast_convert_to_object(zval *p, zend_ast *ast, zend_class_entry *ce)
+{
+	if (ast->kind == ZEND_AST_CONSTANT) {
+		zend_string *name = zend_ast_get_constant_name(ast);
+		zval *zv = zend_get_constant_ex(name, ce, ast->attr);
+		if (UNEXPECTED(zv == NULL)) {
+			return;
+		}
+
+		ZVAL_COPY_OR_DUP(p, zv);
+	} else {
+		zval tmp;
+
+		if (UNEXPECTED(zend_ast_evaluate(&tmp, ast, ce) != SUCCESS)) {
+			return;
+		}
+		ZVAL_COPY_VALUE(p, &tmp);
+	}
+}
+
+ZEND_API void zend_ast_convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce)
 {
 	zval *val, tmp;
 	HashTable *ht, *ht2, *res_ht;
@@ -2149,6 +2169,7 @@ ZEND_API void zend_ast_convert_attributes(zval *ret, HashTable *attributes)
 		res_ht = Z_ARR_P(ret);
 		ZEND_HASH_FOREACH_STR_KEY_VAL(attributes, key, val) {
 			if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
+				zend_ast_convert_to_object(&tmp, Z_ASTVAL_P(val), ce);
 				zend_hash_add_new(res_ht, key, &tmp);
 			} else if (Z_TYPE_P(val) == IS_ARRAY) {
 				ht = Z_ARR_P(val);
@@ -2157,6 +2178,7 @@ ZEND_API void zend_ast_convert_attributes(zval *ret, HashTable *attributes)
 				ht2 = Z_ARR_P(val);
 				ZEND_HASH_FOREACH_VAL(ht, val) {
 					if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
+						zend_ast_convert_to_object(&tmp, Z_ASTVAL_P(val), ce);
 						zend_hash_next_index_insert_new(ht2, &tmp);
 					} else {
 						if (Z_REFCOUNTED_P(val)) {
