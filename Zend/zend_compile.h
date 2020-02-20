@@ -44,6 +44,10 @@
 		zend_string_release_ex(CG(doc_comment), 0); \
 		CG(doc_comment) = NULL; \
 	} \
+	if (CG(attributes)) { \
+		zend_array_ptr_dtor(CG(attributes)); \
+		CG(attributes) = NULL; \
+	} \
 } while (0)
 
 typedef struct _zend_op_array zend_op_array;
@@ -120,6 +124,7 @@ typedef struct _zend_file_context {
 typedef union _zend_parser_stack_elem {
 	zend_ast *ast;
 	zend_string *str;
+	HashTable *hash;
 	zend_ulong num;
 	unsigned char *ptr;
 } zend_parser_stack_elem;
@@ -351,6 +356,7 @@ typedef struct _zend_property_info {
 	uint32_t flags;
 	zend_string *name;
 	zend_string *doc_comment;
+	HashTable *attributes;
 	zend_class_entry *ce;
 	zend_type type;
 } zend_property_info;
@@ -367,6 +373,7 @@ typedef struct _zend_property_info {
 typedef struct _zend_class_constant {
 	zval value; /* access flags are stored in reserved: zval.u2.access_flags */
 	zend_string *doc_comment;
+	HashTable *attributes;
 	zend_class_entry *ce;
 } zend_class_constant;
 
@@ -427,6 +434,7 @@ struct _zend_op_array {
 	uint32_t line_start;
 	uint32_t line_end;
 	zend_string *doc_comment;
+	HashTable   *attributes;
 
 	int last_literal;
 	zval *literals;
@@ -741,6 +749,8 @@ zend_ast *zend_negate_num_string(zend_ast *ast);
 uint32_t zend_add_class_modifier(uint32_t flags, uint32_t new_flag);
 uint32_t zend_add_member_modifier(uint32_t flags, uint32_t new_flag);
 zend_bool zend_handle_encoding_declaration(zend_ast *ast);
+void zend_add_attribute(zend_ast *name, zend_ast *value);
+zend_ast *zend_add_attribute_value(zend_ast *list_ast, zend_ast *val_ast);
 
 /* parser-driven code generators */
 void zend_do_free(znode *op1);

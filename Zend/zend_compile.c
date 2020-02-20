@@ -1825,6 +1825,7 @@ ZEND_API void zend_initialize_class_data(zend_class_entry *ce, zend_bool nullify
 	} else {
 		ZEND_MAP_PTR_INIT(ce->static_members_table, &ce->default_static_members_table);
 		ce->info.user.doc_comment = NULL;
+		ce->info.user.attributes = NULL;
 	}
 
 	ce->default_properties_count = 0;
@@ -1913,6 +1914,50 @@ zend_ast *zend_negate_num_string(zend_ast *ast) /* {{{ */
 		ZEND_ASSERT(0);
 	}
 	return ast;
+}
+/* }}} */
+
+void zend_add_attribute(zend_ast *name, zend_ast *value) /* {{{ */
+{
+	zval *val, tmp;
+	zend_string *key = zend_ast_get_str(name);
+
+#if 1 /* SPECIAL_ATTRIBUTE */
+	if (ZSTR_LEN(key) >= 2 && ZSTR_VAL(key)[0] == '_' && ZSTR_VAL(key)[1] == '_') {
+		zend_error_noreturn(E_COMPILE_ERROR, "Unknown special attribute %s", ZSTR_VAL(key));
+	}
+#endif
+	if (!CG(attributes)) {
+		ALLOC_HASHTABLE(CG(attributes));
+		zend_hash_init(CG(attributes), 8, NULL, ZVAL_PTR_DTOR, 0);
+	}
+	ZVAL_NULL(&tmp);
+	val = zend_hash_add(CG(attributes), key, &tmp);
+	if (!val) {
+		zend_error_noreturn(E_COMPILE_ERROR, "Redeclared attribute %s", ZSTR_VAL(key));
+	}
+	array_init(val);
+	zend_string_release(key);
+}
+/* }}} */
+
+zend_ast *zend_add_attribute_value(zend_ast *list_ast, zend_ast *val_ast) /* {{{ */
+{
+	zval *list, *val, arr, tmp;
+
+	if (list_ast->kind == ZEND_AST_ZVAL) {
+		list = zend_ast_get_zval(list_ast);
+		if (Z_TYPE_P(list) != IS_ARRAY) {
+			array_init(&arr);
+			zend_hash_next_index_insert_new(Z_ARRVAL(arr), list);
+			ZVAL_ARR(list, Z_ARR(arr));
+		}
+
+		val = zend_ast_get_zval(val_ast);
+		zend_hash_next_index_insert_new(Z_ARRVAL_P(list), val);
+	}
+
+	return list_ast;
 }
 /* }}} */
 
@@ -6249,6 +6294,10 @@ void zend_compile_func_decl(znode *result, zend_ast *ast, zend_bool toplevel) /*
 	if (decl->doc_comment) {
 		op_array->doc_comment = zend_string_copy(decl->doc_comment);
 	}
+	if (decl->attributes) {
+		op_array->attributes = decl->attributes;
+		decl->attributes = NULL;
+	}
 	if (decl->kind == ZEND_AST_CLOSURE || decl->kind == ZEND_AST_ARROW_FUNC) {
 		op_array->fn_flags |= ZEND_ACC_CLOSURE;
 	}
@@ -6348,8 +6397,10 @@ void zend_compile_prop_decl(zend_ast *ast, zend_ast *type_ast, uint32_t flags) /
 		zend_ast *name_ast = prop_ast->child[0];
 		zend_ast *value_ast = prop_ast->child[1];
 		zend_ast *doc_comment_ast = prop_ast->child[2];
+		zend_ast *attributes_ast = prop_ast->child[3];
 		zend_string *name = zval_make_interned_string(zend_ast_get_zval(name_ast));
 		zend_string *doc_comment = NULL;
+		HashTable *attributes = NULL;
 		zval value_zv;
 		zend_type type = ZEND_TYPE_INIT_NONE(0);
 
@@ -6367,6 +6418,10 @@ void zend_compile_prop_decl(zend_ast *ast, zend_ast *type_ast, uint32_t flags) /
 		/* Doc comment has been appended as last element in ZEND_AST_PROP_ELEM ast */
 		if (doc_comment_ast) {
 			doc_comment = zend_string_copy(zend_ast_get_str(doc_comment_ast));
+		}
+		if (attributes_ast) {
+			attributes = zend_ast_get_hash(attributes_ast);
+			prop_ast->child[3] = NULL;
 		}
 
 		if (flags & ZEND_ACC_FINAL) {
@@ -6404,7 +6459,7 @@ void zend_compile_prop_decl(zend_ast *ast, zend_ast *type_ast, uint32_t flags) /
 			ZVAL_UNDEF(&value_zv);
 		}
 
-		zend_declare_typed_property(ce, name, &value_zv, flags, doc_comment, type);
+		zend_declare_typed_property(ce, name, &value_zv, flags, doc_comment, attributes, type);
 	}
 }
 /* }}} */
@@ -6446,16 +6501,23 @@ void zend_compile_class_const_decl(zend_ast *ast) /* {{{ */
 		zend_ast *name_ast = const_ast->child[0];
 		zend_ast *value_ast = const_ast->child[1];
 		zend_ast *doc_comment_ast = const_ast->child[2];
+		zend_ast *attributes_ast = const_ast->child[3];
 		zend_string *name = zval_make_interned_string(zend_ast_get_zval(name_ast));
 		zend_string *doc_comment = doc_comment_ast ? zend_string_copy(zend_ast_get_str(doc_comment_ast)) : NULL;
+		HashTable *attributes = NULL;
 		zval value_zv;
 
 		if (UNEXPECTED(ast->attr & (ZEND_ACC_STATIC|ZEND_ACC_ABSTRACT|ZEND_ACC_FINAL))) {
 			zend_check_const_and_trait_alias_attr(ast->attr, "constant");
 		}
 
+		if (attributes_ast) {
+			attributes = zend_ast_get_hash(attributes_ast);
+			const_ast->child[3] = NULL;
+		}
+
 		zend_const_expr_to_zval(&value_zv, value_ast);
-		zend_declare_class_constant_ex(ce, name, &value_zv, ast->attr, doc_comment);
+		zend_declare_class_constant_ex(ce, name, &value_zv, ast->attr, doc_comment, attributes);
 	}
 }
 /* }}} */
@@ -6660,6 +6722,10 @@ zend_op *zend_compile_class_decl(zend_ast *ast, zend_bool toplevel) /* {{{ */
 
 	if (decl->doc_comment) {
 		ce->info.user.doc_comment = zend_string_copy(decl->doc_comment);
+	}
+	if (decl->attributes) {
+		ce->info.user.attributes = decl->attributes;
+		decl->attributes = NULL;
 	}
 
 	if (UNEXPECTED((decl->flags & ZEND_ACC_ANON_CLASS))) {

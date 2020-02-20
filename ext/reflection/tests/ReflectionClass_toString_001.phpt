@@ -107,6 +107,12 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector ] {
       }
     }
 
+    Method [ <internal:Reflection> public method getAttributes ] {
+
+      - Parameters [0] {
+      }
+    }
+
     Method [ <internal:Reflection> public method getConstructor ] {
 
       - Parameters [0] {

@@ -97,6 +97,7 @@ struct _zend_compiler_globals {
 	zend_bool increment_lineno;
 
 	zend_string *doc_comment;
+	HashTable *attributes;
 	uint32_t extra_fn_flags;
 
 	uint32_t compiler_options; /* set of ZEND_COMPILE_* constants */

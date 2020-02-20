@@ -681,6 +681,8 @@ static zend_always_inline uint32_t zval_gc_info(uint32_t gc_type_info) {
 #define IS_RESOURCE_EX				(IS_RESOURCE       | (IS_TYPE_REFCOUNTED << Z_TYPE_FLAGS_SHIFT))
 #define IS_REFERENCE_EX				(IS_REFERENCE      | (IS_TYPE_REFCOUNTED << Z_TYPE_FLAGS_SHIFT))
 
+#define IS_IMMUTABLE_ARRAY_EX		(IS_ARRAY          | !(IS_TYPE_REFCOUNTED << Z_TYPE_FLAGS_SHIFT))
+
 #define IS_CONSTANT_AST_EX			(IS_CONSTANT_AST   | (IS_TYPE_REFCOUNTED << Z_TYPE_FLAGS_SHIFT))
 
 /* string flags (zval.value->gc.u.flags) */
@@ -937,6 +939,12 @@ static zend_always_inline uint32_t zval_gc_info(uint32_t gc_type_info) {
 		zval *__z = (z);						\
 		Z_ARR_P(__z) = __arr;					\
 		Z_TYPE_INFO_P(__z) = IS_ARRAY_EX;		\
+	} while (0)
+
+#define ZVAL_IMMUTABLE_ARR(z, a) do {				\
+		zval *__z = (z);							\
+		Z_ARR_P(__z) = (a);							\
+		Z_TYPE_INFO_P(__z) = IS_IMMUTABLE_ARRAY_EX;	\
 	} while (0)
 
 #define ZVAL_NEW_ARR(z) do {									\
