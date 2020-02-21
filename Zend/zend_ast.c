@@ -2135,6 +2135,7 @@ ZEND_API void zend_ast_convert_to_object(zval *p, zend_ast *ast, zend_class_entr
 		if (UNEXPECTED(zend_ast_evaluate(&tmp, ast, ce) != SUCCESS)) {
 			return;
 		}
+
 		ZVAL_COPY_VALUE(p, &tmp);
 	}
 }

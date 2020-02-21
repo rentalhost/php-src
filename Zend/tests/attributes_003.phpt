@@ -8,12 +8,25 @@ namespace Doctrine\ORM\Mapping {
     }
 }
 
-namespace {
+namespace Foo {
     use Doctrine\ORM\Mapping\Entity;
 
-    <<Entity(["foo"])>>
+    <<Entity(["foo" => "bar"])>>
     function foo() {
     }
-    var_dump((new ReflectionFunction('foo'))->getAttributes());
+}
+
+namespace {
+    var_dump((new ReflectionFunction('Foo\foo'))->getAttributes());
 }
 --EXPECTF--
+array(1) {
+  ["Doctrine\ORM\Mapping\Entity"]=>
+  array(1) {
+    [0]=>
+    array(1) {
+      ["foo"]=>
+      string(3) "bar"
+    }
+  }
+}

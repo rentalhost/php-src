@@ -22,7 +22,7 @@ class Bar {
 	const C = 2;
 	<<TestProp>>
 	public $x = 3;
-	
+
 }
 $r = new ReflectionClass("Bar");
 var_dump($r->getAttributes());
@@ -38,7 +38,7 @@ $r = new ReflectionFunction("f1");
 var_dump($r->getAttributes());
 
 // Attributes with AST
-<<a1,a2(1+"a"),a3(1+"b",2+"c"),a4(["a"=>1,"b"=>2])>>
+<<a1,a2(1+1),a3(1+3,2+2),a4(["a"=>1,"b"=>2])>>
 function f2() {}
 $r = new ReflectionFunction("f2");
 var_dump($r->getAttributes());
@@ -97,102 +97,21 @@ array(4) {
   ["a2"]=>
   array(1) {
     [0]=>
-    object(ast\Node)#4 (4) {
-      ["kind"]=>
-      int(520)
-      ["flags"]=>
-      int(1)
-      ["lineno"]=>
-      NULL
-      ["children"]=>
-      array(2) {
-        [0]=>
-        int(1)
-        [1]=>
-        string(1) "a"
-      }
-    }
+    int(2)
   }
   ["a3"]=>
-  array(2) {
+  array(1) {
     [0]=>
-    object(ast\Node)#5 (4) {
-      ["kind"]=>
-      int(520)
-      ["flags"]=>
-      int(1)
-      ["lineno"]=>
-      NULL
-      ["children"]=>
-      array(2) {
-        [0]=>
-        int(1)
-        [1]=>
-        string(1) "b"
-      }
-    }
-    [1]=>
-    object(ast\Node)#6 (4) {
-      ["kind"]=>
-      int(520)
-      ["flags"]=>
-      int(1)
-      ["lineno"]=>
-      NULL
-      ["children"]=>
-      array(2) {
-        [0]=>
-        int(2)
-        [1]=>
-        string(1) "c"
-      }
-    }
+    int(4)
   }
   ["a4"]=>
   array(1) {
     [0]=>
-    object(ast\Node)#7 (4) {
-      ["kind"]=>
-      int(130)
-      ["flags"]=>
-      int(0)
-      ["lineno"]=>
-      NULL
-      ["children"]=>
-      array(2) {
-        [0]=>
-        object(ast\Node)#8 (4) {
-          ["kind"]=>
-          int(525)
-          ["flags"]=>
-          int(0)
-          ["lineno"]=>
-          NULL
-          ["children"]=>
-          array(2) {
-            [0]=>
-            int(1)
-            [1]=>
-            string(1) "a"
-          }
-        }
-        [1]=>
-        object(ast\Node)#9 (4) {
-          ["kind"]=>
-          int(525)
-          ["flags"]=>
-          int(0)
-          ["lineno"]=>
-          NULL
-          ["children"]=>
-          array(2) {
-            [0]=>
-            int(2)
-            [1]=>
-            string(1) "b"
-          }
-        }
-      }
+    array(2) {
+      ["a"]=>
+      int(1)
+      ["b"]=>
+      int(2)
     }
   }
 }

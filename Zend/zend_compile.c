@@ -9286,12 +9286,12 @@ void zend_eval_const_expr(zend_ast **ast_ptr) /* {{{ */
 void zend_add_attribute(zend_ast *name, zend_ast *value) /* {{{ */
 {
 	zval *val, tmp;
-	//zend_string *key = zend_ast_get_str(name);
+	zend_string *key;
 
 	znode class_node;
 
 	zend_compile_class_ref(&class_node, name, ZEND_FETCH_CLASS_EXCEPTION);
-	zend_string *key = Z_STR(class_node.u.constant);
+	key = Z_STR(class_node.u.constant);
 
 	if (!CG(attributes)) {
 		ALLOC_HASHTABLE(CG(attributes));
@@ -9316,16 +9316,13 @@ void zend_add_attribute(zend_ast *name, zend_ast *value) /* {{{ */
 				zend_hash_next_index_insert_new(Z_ARRVAL_P(val), zv);
 			}
 		} else {
-			ZVAL_AST(&tmp, zend_ast_copy(value));
-			zend_ast_destroy(value);
+			zend_const_expr_to_zval(&tmp, value);
 			array_init(val);
 			zend_hash_next_index_insert_new(Z_ARRVAL_P(val), &tmp);
 		}
 	} else {
 		array_init(val);
 	}
-
-	zend_string_release(key);
 }
 /* }}} */
 

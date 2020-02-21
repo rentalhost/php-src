@@ -14,9 +14,9 @@ namespace Doctrine\ORM {
 	function GetClassAttributes($class_name) {
 		$reflClass = new \ReflectionClass($class_name);
 		$attrs = $reflClass->getAttributes();
-		foreach ($attrs as $name => &$values) {
+		foreach ($attrs as $name => $values) {
 			$name = "Doctrine\\" . $name;
-			$values = new $name($values);
+			$attrs[$name] = new $name($values);
 		}
 		return $attrs;
 	}
