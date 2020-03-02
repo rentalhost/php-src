@@ -316,14 +316,14 @@ name:
 
 attribute_values:
 		expr						{ $$ = $1; }
-	|	attribute_values ',' expr	{ $$ = zend_add_attribute_value($1, $3); }
+	|	attribute_values ',' expr	{ $$ = zend_ast_add_attribute_value($1, $3); }
 ;
 
 attribute_list:
-		class_name_reference												{ zend_add_attribute($1, NULL); }
-	|	class_name_reference '(' attribute_values ')'						{ zend_add_attribute($1, $3); }
-	|	attribute_list ',' class_name_reference							{ zend_add_attribute($3, NULL); }
-	|	attribute_list ',' class_name_reference '(' attribute_values ')'	{ zend_add_attribute($3, $5); }
+		class_name_reference												{ zend_ast_add_attribute($1, NULL); }
+	|	class_name_reference '(' attribute_values ')'						{ zend_ast_add_attribute($1, $3); }
+	|	attribute_list ',' class_name_reference								{ zend_ast_add_attribute($3, NULL); }
+	|	attribute_list ',' class_name_reference '(' attribute_values ')'	{ zend_ast_add_attribute($3, $5); }
 ;
 
 attribute:

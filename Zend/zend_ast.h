@@ -353,4 +353,7 @@ static zend_always_inline zend_ast *zend_ast_list_rtrim(zend_ast *ast) {
 	}
 	return ast;
 }
+
+void zend_ast_add_attribute(zend_ast *name, zend_ast *value);
+zend_ast *zend_ast_add_attribute_value(zend_ast *list_ast, zend_ast *val_ast);
 #endif
