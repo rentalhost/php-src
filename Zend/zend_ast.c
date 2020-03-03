@@ -2140,34 +2140,28 @@ ZEND_API void zend_ast_convert_to_object(zval *p, zend_ast *ast, zend_class_entr
 	}
 }
 
-ZEND_API void zend_ast_convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce)
+ZEND_API zval *zend_ast_convert_attributes(HashTable *attributes, zend_class_entry *ce)
 {
 	zval *val, tmp;
-	HashTable *ht, *ht2, *res_ht;
-	zend_string *key;
-	int convert_ast = 0;
+	HashTable *ht, *ht2;
+	zval *res = emalloc(sizeof(zval));
+
+	array_init(res);
 
 	ZEND_HASH_FOREACH_VAL(attributes, val) {
 		if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
-			convert_ast = 1;
+			zend_ast_convert_to_object(&tmp, Z_ASTVAL_P(val), ce);
+			zend_hash_next_index_insert(Z_ARRVAL_P(res), &tmp);
 			break;
-		} else if (Z_TYPE_P(val) == IS_ARRAY) {
-			ht = Z_ARR_P(val);
-			ZEND_HASH_FOREACH_VAL(ht, val) {
-				if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
-					convert_ast = 1;
-					break;
-				}
-			} ZEND_HASH_FOREACH_END();
-			if (convert_ast) {
-				break;
+		} else {
+			if (Z_REFCOUNTED_P(val)) {
+				Z_ADDREF_P(val);
 			}
+			zend_hash_next_index_insert(Z_ARRVAL_P(res), val);
 		}
 	} ZEND_HASH_FOREACH_END();
 
-	if (convert_ast) {
-		array_init_size(ret, zend_hash_num_elements(attributes));
-		res_ht = Z_ARR_P(ret);
+/*	if (convert_ast) {
 		ZEND_HASH_FOREACH_STR_KEY_VAL(attributes, key, val) {
 			if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
 				zend_ast_convert_to_object(&tmp, Z_ASTVAL_P(val), ce);
@@ -2201,14 +2195,15 @@ ZEND_API void zend_ast_convert_attributes(zval *ret, HashTable *attributes, zend
 		GC_ADDREF(attributes);
 		ZVAL_ARR(ret, attributes);
 	}
+	*/
+
+	return res;
 }
 
 void zend_ast_add_attribute(zend_ast *name, zend_ast *value) /* {{{ */
 {
 	zval *val, tmp;
 	zend_string *key;
-
-	znode class_node;
 
 	zval *zv = zend_ast_get_zval(name);
 	key = Z_STR_P(zv);
@@ -2248,7 +2243,7 @@ void zend_ast_add_attribute(zend_ast *name, zend_ast *value) /* {{{ */
 
 zend_ast *zend_ast_add_attribute_value(zend_ast *list_ast, zend_ast *val_ast) /* {{{ */
 {
-	zval *list, *val, arr, tmp;
+	zval *list, *val, arr;
 
 	if (list_ast->kind == ZEND_AST_ZVAL) {
 		list = zend_ast_get_zval(list_ast);

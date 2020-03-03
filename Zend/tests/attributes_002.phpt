@@ -14,10 +14,12 @@ namespace Doctrine\ORM {
 	function GetClassAttributes($class_name) {
 		$reflClass = new \ReflectionClass($class_name);
 		$attrs = $reflClass->getAttributes();
-		foreach ($attrs as $name => $values) {
-			$attrs[$name] = new $name($values[0][0]);
+        $values = [];
+		foreach ($attrs as $attribute) {
+            $class = $attribute->getName();
+			$values[$attribute->getName()] = new $class(...$attribute->getArguments());
 		}
-		return $attrs;
+		return $values;
 	}
 }
 
@@ -46,9 +48,11 @@ namespace {
 ?>
 --EXPECT--
 array(1) {
-  ["ORM\Entity"]=>
-  object(Doctrine\ORM\Entity)#2 (1) {
-    ["name":"Doctrine\ORM\Entity":private]=>
+  ["Doctrine\ORM\Mapping\Entity"]=>
+  object(Doctrine\ORM\Mapping\Entity)#3 (2) {
+    ["tableName"]=>
     string(4) "user"
+    ["repository"]=>
+    string(14) "UserRepository"
   }
 }

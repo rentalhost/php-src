@@ -2,6 +2,16 @@
 Resolve attribute names
 --FILE--
 <?php
+function dump_attributes($attributes) {
+    $arr = [];
+    foreach ($attributes as $attribute) {
+        if (!isset($arr[$attribute->getName()])) {
+            $arr[$attribute->getName()] = [];
+        }
+        $arr[$attribute->getName()][] = $attribute->getArguments();
+    }
+    var_dump($arr);
+}
 
 namespace Doctrine\ORM\Mapping {
     class Entity {
@@ -17,7 +27,7 @@ namespace Foo {
 }
 
 namespace {
-    var_dump((new ReflectionFunction('Foo\foo'))->getAttributes());
+    dump_attributes((new ReflectionFunction('Foo\foo'))->getAttributes());
 }
 --EXPECTF--
 array(1) {

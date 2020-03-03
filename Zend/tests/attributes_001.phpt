@@ -2,18 +2,28 @@
 Basic attributes usage
 --FILE--
 <?php
+function dump_attributes($attributes) {
+    $arr = [];
+    foreach ($attributes as $attribute) {
+        if (!isset($arr[$attribute->getName()])) {
+            $arr[$attribute->getName()] = [];
+        }
+        $arr[$attribute->getName()][] = $attribute->getArguments();
+    }
+    var_dump($arr);
+}
 // No attributes
 function f0() {
 }
 $r = new ReflectionFunction("f0");
-var_dump($r->getAttributes());
+dump_attributes($r->getAttributes());
 
 // Function attributes
 <<TestFunction>>
 function foo() {
 }
 $r = new ReflectionFunction("foo");
-var_dump($r->getAttributes());
+dump_attributes($r->getAttributes());
 
 // Class attributes
 <<TestClass>>
@@ -25,30 +35,30 @@ class Bar {
 
 }
 $r = new ReflectionClass("Bar");
-var_dump($r->getAttributes());
+dump_attributes($r->getAttributes());
 $r1 = $r->getReflectionConstant("C");
-var_dump($r1->getAttributes());
+dump_attributes($r1->getAttributes());
 $r2 = $r->getProperty("x");
-var_dump($r2->getAttributes());
+dump_attributes($r2->getAttributes());
 
 // Multiple attributes with multiple values
 <<a1,a2(1),a3(1,2)>>
 function f1() {}
 $r = new ReflectionFunction("f1");
-var_dump($r->getAttributes());
+dump_attributes($r->getAttributes());
 
 // Attributes with AST
 <<a1,a2(1+1),a3(1+3,2+2),a4(["a"=>1,"b"=>2])>>
 function f2() {}
 $r = new ReflectionFunction("f2");
-var_dump($r->getAttributes());
+dump_attributes($r->getAttributes());
 
 // Attributes with namespaces
 <<Foo\Bar>>
 function f4() {
 }
 $r = new ReflectionFunction("f4");
-var_dump($r->getAttributes());
+dump_attributes($r->getAttributes());
 ?>
 --EXPECT--
 array(0) {

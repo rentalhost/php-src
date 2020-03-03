@@ -356,4 +356,5 @@ static zend_always_inline zend_ast *zend_ast_list_rtrim(zend_ast *ast) {
 
 void zend_ast_add_attribute(zend_ast *name, zend_ast *value);
 zend_ast *zend_ast_add_attribute_value(zend_ast *list_ast, zend_ast *val_ast);
+ZEND_API zval *zend_ast_convert_attributes(HashTable *attributes, zend_class_entry *ce);
 #endif

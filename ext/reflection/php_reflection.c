@@ -31,6 +31,7 @@
 
 #include "zend.h"
 #include "zend_API.h"
+#include "zend_ast.h"
 #include "zend_exceptions.h"
 #include "zend_operators.h"
 #include "zend_constants.h"
@@ -256,6 +257,9 @@ static void reflection_free_objects_storage(zend_object *object) /* {{{ */
 			break;
 		case REF_TYPE_ATTRIBUTE:
 			attr_reference = (attribute_reference*)intern->ptr;
+			if (attr_reference->arguments) {
+				zval_ptr_dtor(attr_reference->arguments);
+			}
 			efree(attr_reference);
 			break;
 		case REF_TYPE_GENERATOR:
@@ -1036,6 +1040,45 @@ static void _extension_string(smart_str *str, zend_module_entry *module, char *i
 }
 /* }}} */
 
+/* {{{ reflection_attribute_factory */
+static void reflection_attribute_factory(zval *object, zend_string *name, zval *arguments)
+{
+	reflection_object *intern;
+	attribute_reference *reference;
+
+	reflection_instantiate(reflection_attribute_ptr, object);
+	intern  = Z_REFLECTION_P(object);
+	reference = (attribute_reference*) emalloc(sizeof(attribute_reference));
+	reference->name = name;
+	reference->arguments = arguments;
+	intern->ptr = reference;
+	intern->ref_type = REF_TYPE_ATTRIBUTE;
+}
+/* }}} */
+
+
+static zval* convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce)
+{
+	zend_string *attribute_name;
+	zval *attrs, *attr, *object;
+	zval *converted_attributes;
+
+	array_init(ret);
+
+	ZEND_HASH_FOREACH_STR_KEY_VAL(attributes, attribute_name, attrs) {
+		if (attribute_name) {
+
+			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(attrs), attr) {
+				converted_attributes = zend_ast_convert_attributes(Z_ARRVAL_P(attr), ce);
+
+				reflection_attribute_factory(object, attribute_name, converted_attributes);
+
+				zend_hash_next_index_insert(Z_ARRVAL_P(ret), object);
+			} ZEND_HASH_FOREACH_END();
+		}
+	} ZEND_HASH_FOREACH_END();
+}
+
 static void _zend_extension_string(smart_str *str, zend_extension *extension, char *indent) /* {{{ */
 {
 	smart_str_append_printf(str, "%sZend Extension [ %s ", indent, extension->name);
@@ -1188,22 +1231,6 @@ static void reflection_type_factory(zend_type type, zval *object, zend_bool lega
 	if (ZEND_TYPE_HAS_NAME(type)) {
 		zend_string_addref(ZEND_TYPE_NAME(type));
 	}
-}
-/* }}} */
-
-/* {{{ reflection_attribute_factory */
-static void reflection_attribute_factory(zval *object, zend_string *name, zval *arguments)
-{
-	reflection_object *intern;
-	attribute_reference *reference;
-
-	reflection_instantiate(reflection_attribute_ptr, object);
-	intern  = Z_REFLECTION_P(object);
-	reference = (attribute_reference*) emalloc(sizeof(attribute_reference));
-	reference->name = name;
-	reference->arguments = arguments;
-	intern->ptr = reference;
-	intern->ref_type = REF_TYPE_ATTRIBUTE;
 }
 /* }}} */
 
@@ -1671,7 +1698,7 @@ ZEND_METHOD(reflection_function, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(fptr);
 	if (fptr->type == ZEND_USER_FUNCTION && fptr->op_array.attributes) {
-		zend_ast_convert_attributes(return_value, fptr->op_array.attributes, NULL);
+		convert_attributes(return_value, fptr->op_array.attributes, NULL);
 	} else {
 		array_init(return_value);
 	}
@@ -3674,7 +3701,7 @@ ZEND_METHOD(reflection_class_constant, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ref);
 	if (ref->attributes) {
-		zend_ast_convert_attributes(return_value, ref->attributes, ref->ce);
+		convert_attributes(return_value, ref->attributes, ref->ce);
 	} else {
 		array_init(return_value);
 	}
@@ -4055,7 +4082,7 @@ ZEND_METHOD(reflection_class, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ce);
 	if (ce->type == ZEND_USER_CLASS && ce->info.user.attributes) {
-		zend_ast_convert_attributes(return_value, ce->info.user.attributes, ce);
+		convert_attributes(return_value, ce->info.user.attributes, ce);
 	} else {
 		array_init(return_value);
 	}
@@ -5573,7 +5600,7 @@ ZEND_METHOD(reflection_property, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ref);
 	if (ref->prop->attributes) {
-		zend_ast_convert_attributes(return_value, ref->prop->attributes, ref->prop->ce);
+		convert_attributes(return_value, ref->prop->attributes, ref->prop->ce);
 	} else {
 		array_init(return_value);
 	}
@@ -6308,6 +6335,15 @@ ZEND_METHOD(reflection_reference, getId)
  *	   Returns the name of the attribute */
 ZEND_METHOD(reflection_attribute, getName)
 {
+	reflection_object *intern;
+	attribute_reference *param;
+
+	if (zend_parse_parameters_none() == FAILURE) {
+		RETURN_THROWS();
+	}
+	GET_REFLECTION_OBJECT_PTR(param);
+
+	RETVAL_STR(param->name);
 }
 /* }}} */
 
@@ -6315,6 +6351,19 @@ ZEND_METHOD(reflection_attribute, getName)
  *	   Returns the arguments passed to the attribute */
 ZEND_METHOD(reflection_attribute, getArguments)
 {
+	if (zend_parse_parameters_none() == FAILURE) {
+		RETURN_THROWS();
+	}
+
+	reflection_object *intern;
+	attribute_reference *param;
+
+	if (zend_parse_parameters_none() == FAILURE) {
+		RETURN_THROWS();
+	}
+	GET_REFLECTION_OBJECT_PTR(param);
+
+	ZVAL_COPY(return_value, param->arguments);
 }
 /* }}} */
 
