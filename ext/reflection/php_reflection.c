@@ -133,6 +133,12 @@ typedef struct _type_reference {
 	zend_bool legacy_behavior;
 } type_reference;
 
+/* Struct for attributes */
+typedef struct _attribute_reference {
+	zend_string *name;
+	zval *arguments;
+} attribute_reference;
+
 typedef enum {
 	REF_TYPE_OTHER,      /* Must be 0 */
 	REF_TYPE_FUNCTION,
@@ -140,7 +146,8 @@ typedef enum {
 	REF_TYPE_PARAMETER,
 	REF_TYPE_TYPE,
 	REF_TYPE_PROPERTY,
-	REF_TYPE_CLASS_CONSTANT
+	REF_TYPE_CLASS_CONSTANT,
+	REF_TYPE_ATTRIBUTE
 } reflection_type_t;
 
 /* Struct for reflection objects */
@@ -221,6 +228,7 @@ static void reflection_free_objects_storage(zend_object *object) /* {{{ */
 	reflection_object *intern = reflection_object_from_obj(object);
 	parameter_reference *reference;
 	property_reference *prop_reference;
+	attribute_reference *attr_reference;
 
 	if (intern->ptr) {
 		switch (intern->ref_type) {
@@ -245,6 +253,10 @@ static void reflection_free_objects_storage(zend_object *object) /* {{{ */
 			prop_reference = (property_reference*)intern->ptr;
 			zend_string_release_ex(prop_reference->unmangled_name, 0);
 			efree(intern->ptr);
+			break;
+		case REF_TYPE_ATTRIBUTE:
+			attr_reference = (attribute_reference*)intern->ptr;
+			efree(attr_reference);
 			break;
 		case REF_TYPE_GENERATOR:
 		case REF_TYPE_CLASS_CONSTANT:
@@ -1176,6 +1188,22 @@ static void reflection_type_factory(zend_type type, zval *object, zend_bool lega
 	if (ZEND_TYPE_HAS_NAME(type)) {
 		zend_string_addref(ZEND_TYPE_NAME(type));
 	}
+}
+/* }}} */
+
+/* {{{ reflection_attribute_factory */
+static void reflection_attribute_factory(zval *object, zend_string *name, zval *arguments)
+{
+	reflection_object *intern;
+	attribute_reference *reference;
+
+	reflection_instantiate(reflection_attribute_ptr, object);
+	intern  = Z_REFLECTION_P(object);
+	reference = (attribute_reference*) emalloc(sizeof(attribute_reference));
+	reference->name = name;
+	reference->arguments = arguments;
+	intern->ptr = reference;
+	intern->ref_type = REF_TYPE_ATTRIBUTE;
 }
 /* }}} */
 
@@ -3646,7 +3674,7 @@ ZEND_METHOD(reflection_class_constant, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ref);
 	if (ref->attributes) {
-		zend_ast_convert_attributes(return_value, ref->attributes, NULL);
+		zend_ast_convert_attributes(return_value, ref->attributes, ref->ce);
 	} else {
 		array_init(return_value);
 	}
@@ -4027,7 +4055,7 @@ ZEND_METHOD(reflection_class, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ce);
 	if (ce->type == ZEND_USER_CLASS && ce->info.user.attributes) {
-		zend_ast_convert_attributes(return_value, ce->info.user.attributes, NULL);
+		zend_ast_convert_attributes(return_value, ce->info.user.attributes, ce);
 	} else {
 		array_init(return_value);
 	}
@@ -5545,7 +5573,7 @@ ZEND_METHOD(reflection_property, getAttributes)
 	}
 	GET_REFLECTION_OBJECT_PTR(ref);
 	if (ref->prop->attributes) {
-		zend_ast_convert_attributes(return_value, ref->prop->attributes, NULL);
+		zend_ast_convert_attributes(return_value, ref->prop->attributes, ref->prop->ce);
 	} else {
 		array_init(return_value);
 	}
