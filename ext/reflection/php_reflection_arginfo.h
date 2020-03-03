@@ -59,6 +59,10 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_ReflectionFunctionAbstract_getReturnType arginfo_class_Reflector___toString
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionFunctionAbstract_getAttributes, 0, 0, 0)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionFunction___construct, 0, 0, 1)
 	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO()
@@ -268,6 +272,8 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_ReflectionClass_getShortName arginfo_class_Reflector___toString
 
+#define arginfo_class_ReflectionClass_getAttributes arginfo_class_ReflectionFunctionAbstract_getAttributes
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionObject___construct, 0, 0, 1)
 	ZEND_ARG_TYPE_INFO(0, argument, IS_OBJECT, 0)
 ZEND_END_ARG_INFO()
@@ -321,6 +327,8 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_ReflectionProperty_getDefaultValue arginfo_class_Reflector___toString
 
+#define arginfo_class_ReflectionProperty_getAttributes arginfo_class_ReflectionFunctionAbstract_getAttributes
+
 #define arginfo_class_ReflectionClassConstant___clone arginfo_class_Reflector___toString
 
 #define arginfo_class_ReflectionClassConstant___construct arginfo_class_ReflectionProperty___construct
@@ -342,6 +350,8 @@ ZEND_END_ARG_INFO()
 #define arginfo_class_ReflectionClassConstant_getDeclaringClass arginfo_class_Reflector___toString
 
 #define arginfo_class_ReflectionClassConstant_getDocComment arginfo_class_Reflector___toString
+
+#define arginfo_class_ReflectionClassConstant_getAttributes arginfo_class_ReflectionFunctionAbstract_getAttributes
 
 #define arginfo_class_ReflectionParameter___clone arginfo_class_Reflector___toString
 
@@ -456,3 +466,14 @@ ZEND_END_ARG_INFO()
 #define arginfo_class_ReflectionReference___clone arginfo_class_Reflector___toString
 
 #define arginfo_class_ReflectionReference___construct arginfo_class_Reflector___toString
+
+#define arginfo_class_ReflectionAttribute_getName arginfo_class_ReflectionReference_getId
+
+#define arginfo_class_ReflectionAttribute_getArguments arginfo_class_ReflectionUnionType_getTypes
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_ReflectionAttribute_getAsObject, 0, 0, IS_OBJECT, 0)
+ZEND_END_ARG_INFO()
+
+#define arginfo_class_ReflectionAttribute___clone arginfo_class_Reflector___toString
+
+#define arginfo_class_ReflectionAttribute___construct arginfo_class_Reflector___toString

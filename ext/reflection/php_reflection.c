@@ -84,6 +84,7 @@ PHPAPI zend_class_entry *reflection_class_constant_ptr;
 PHPAPI zend_class_entry *reflection_extension_ptr;
 PHPAPI zend_class_entry *reflection_zend_extension_ptr;
 PHPAPI zend_class_entry *reflection_reference_ptr;
+PHPAPI zend_class_entry *reflection_attribute_ptr;
 
 /* Exception throwing macro */
 #define _DO_THROW(msg) \
@@ -6275,6 +6276,27 @@ ZEND_METHOD(reflection_reference, getId)
 }
 /* }}} */
 
+/* {{{ proto public string ReflectionAttribute::getName()
+ *	   Returns the name of the attribute */
+ZEND_METHOD(reflection_attribute, getName)
+{
+}
+/* }}} */
+
+/* {{{ proto public string ReflectionAttribute::getArguments()
+ *	   Returns the arguments passed to the attribute */
+ZEND_METHOD(reflection_attribute, getArguments)
+{
+}
+/* }}} */
+
+/* {{{ proto public string ReflectionAttribute::getAsObject()
+ *	   Returns the attribute as an object */
+ZEND_METHOD(reflection_attribute, getAsObject)
+{
+}
+/* }}} */
+
 /* {{{ method tables */
 static const zend_function_entry reflection_exception_functions[] = {
 	PHP_FE_END
@@ -6302,7 +6324,7 @@ static const zend_function_entry reflection_function_abstract_functions[] = {
 	ZEND_ME(reflection_function, getClosureThis, arginfo_class_ReflectionFunctionAbstract_getClosureThis, 0)
 	ZEND_ME(reflection_function, getClosureScopeClass, arginfo_class_ReflectionFunctionAbstract_getClosureScopeClass, 0)
 	ZEND_ME(reflection_function, getDocComment, arginfo_class_ReflectionFunctionAbstract_getDocComment, 0)
-	ZEND_ME(reflection_function, getAttributes, arginfo_class_ReflectionFunctionAbstract_getDocComment, 0)
+	ZEND_ME(reflection_function, getAttributes, arginfo_class_ReflectionFunctionAbstract_getAttributes, 0)
 	ZEND_ME(reflection_function, getEndLine, arginfo_class_ReflectionFunctionAbstract_getEndLine, 0)
 	ZEND_ME(reflection_function, getExtension, arginfo_class_ReflectionFunctionAbstract_getExtension, 0)
 	ZEND_ME(reflection_function, getExtensionName, arginfo_class_ReflectionFunctionAbstract_getExtensionName, 0)
@@ -6377,7 +6399,7 @@ static const zend_function_entry reflection_class_functions[] = {
 	ZEND_ME(reflection_class, getStartLine, arginfo_class_ReflectionClass_getStartLine, 0)
 	ZEND_ME(reflection_class, getEndLine, arginfo_class_ReflectionClass_getEndLine, 0)
 	ZEND_ME(reflection_class, getDocComment, arginfo_class_ReflectionClass_getDocComment, 0)
-	ZEND_ME(reflection_class, getAttributes, arginfo_class_ReflectionClass_getDocComment, 0)
+	ZEND_ME(reflection_class, getAttributes, arginfo_class_ReflectionClass_getAttributes, 0)
 	ZEND_ME(reflection_class, getConstructor, arginfo_class_ReflectionClass_getConstructor, 0)
 	ZEND_ME(reflection_class, hasMethod, arginfo_class_ReflectionClass_hasMethod, 0)
 	ZEND_ME(reflection_class, getMethod, arginfo_class_ReflectionClass_getMethod, 0)
@@ -6442,7 +6464,7 @@ static const zend_function_entry reflection_property_functions[] = {
 	ZEND_ME(reflection_property, getModifiers, arginfo_class_ReflectionProperty_getModifiers, 0)
 	ZEND_ME(reflection_property, getDeclaringClass, arginfo_class_ReflectionProperty_getDeclaringClass, 0)
 	ZEND_ME(reflection_property, getDocComment, arginfo_class_ReflectionProperty_getDocComment, 0)
-	ZEND_ME(reflection_property, getAttributes, arginfo_class_ReflectionProperty_getDocComment, 0)
+	ZEND_ME(reflection_property, getAttributes, arginfo_class_ReflectionProperty_getAttributes, 0)
 	ZEND_ME(reflection_property, setAccessible, arginfo_class_ReflectionProperty_setAccessible, 0)
 	ZEND_ME(reflection_property, getType, arginfo_class_ReflectionProperty_getType, 0)
 	ZEND_ME(reflection_property, hasType, arginfo_class_ReflectionProperty_hasType, 0)
@@ -6463,7 +6485,7 @@ static const zend_function_entry reflection_class_constant_functions[] = {
 	ZEND_ME(reflection_class_constant, getModifiers, arginfo_class_ReflectionClassConstant_getModifiers, 0)
 	ZEND_ME(reflection_class_constant, getDeclaringClass, arginfo_class_ReflectionClassConstant_getDeclaringClass, 0)
 	ZEND_ME(reflection_class_constant, getDocComment, arginfo_class_ReflectionClassConstant_getDocComment, 0)
-	ZEND_ME(reflection_class_constant, getAttributes, arginfo_class_ReflectionClassConstant_getDocComment, 0)
+	ZEND_ME(reflection_class_constant, getAttributes, arginfo_class_ReflectionClassConstant_getAttributes, 0)
 	PHP_FE_END
 };
 
@@ -6543,6 +6565,17 @@ static const zend_function_entry reflection_zend_extension_functions[] = {
 static const zend_function_entry reflection_reference_functions[] = {
 	ZEND_ME(reflection_reference, fromArrayElement, arginfo_class_ReflectionReference_fromArrayElement, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	ZEND_ME(reflection_reference, getId, arginfo_class_ReflectionReference_getId, ZEND_ACC_PUBLIC)
+
+	/* Always throwing dummy methods */
+	ZEND_ME(reflection, __clone, arginfo_class_ReflectionReference___clone, ZEND_ACC_PRIVATE)
+	ZEND_ME(reflection_reference, __construct, arginfo_class_ReflectionReference___construct, ZEND_ACC_PRIVATE)
+	PHP_FE_END
+};
+
+static const zend_function_entry reflection_attribute_functions[] = {
+	ZEND_ME(reflection_attribute, getName, arginfo_class_ReflectionAttribute_getName, ZEND_ACC_PUBLIC)
+	ZEND_ME(reflection_attribute, getArguments, arginfo_class_ReflectionAttribute_getArguments, ZEND_ACC_PUBLIC)
+	ZEND_ME(reflection_attribute, getAsObject, arginfo_class_ReflectionAttribute_getAsObject, ZEND_ACC_PUBLIC)
 
 	/* Always throwing dummy methods */
 	ZEND_ME(reflection, __clone, arginfo_class_ReflectionReference___clone, ZEND_ACC_PRIVATE)
@@ -6698,6 +6731,11 @@ PHP_MINIT_FUNCTION(reflection) /* {{{ */
 	reflection_init_class_handlers(&_reflection_entry);
 	_reflection_entry.ce_flags |= ZEND_ACC_FINAL;
 	reflection_reference_ptr = zend_register_internal_class(&_reflection_entry);
+
+	INIT_CLASS_ENTRY(_reflection_entry, "ReflectionAttribute", reflection_attribute_functions);
+	reflection_init_class_handlers(&_reflection_entry);
+	_reflection_entry.ce_flags |= ZEND_ACC_FINAL;
+	reflection_attribute_ptr = zend_register_internal_class(&_reflection_entry);
 
 	REFLECTION_G(key_initialized) = 0;
 

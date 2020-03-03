@@ -94,6 +94,9 @@ abstract class ReflectionFunctionAbstract implements Reflector
 
     /** @return ?ReflectionType */
     public function getReturnType() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes($name = null) {}
 }
 
 class ReflectionFunction extends ReflectionFunctionAbstract
@@ -353,6 +356,9 @@ class ReflectionClass implements Reflector
 
     /** @return string|false */
     public function getShortName() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes($name = null) {}
 }
 
 class ReflectionObject extends ReflectionClass
@@ -418,6 +424,9 @@ class ReflectionProperty implements Reflector
 
     /** @return mixed */
     public function getDefaultValue() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes($name = null) {}
 }
 
 class ReflectionClassConstant implements Reflector
@@ -452,6 +461,9 @@ class ReflectionClassConstant implements Reflector
 
     /** @return string|false */
     public function getDocComment() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes($name = null) {}
 }
 
 class ReflectionParameter implements Reflector
@@ -620,6 +632,17 @@ final class ReflectionReference
     public static function fromArrayElement(array $array, $key): ?ReflectionReference {}
 
     public function getId(): string {}
+
+    private function __clone() {}
+
+    private function __construct() {}
+}
+
+final class ReflectionAttribute
+{
+    public function getName(): string {}
+    public function getArguments(): array {}
+    public function getAsObject(): object {}
 
     private function __clone() {}
 
