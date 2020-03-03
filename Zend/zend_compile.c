@@ -6216,6 +6216,42 @@ static void zend_begin_func_decl(znode *result, zend_op_array *op_array, zend_as
 }
 /* }}} */
 
+static HashTable* zend_compile_resolve_attributes(HashTable *declared_attributes)
+{
+	zval *attr, *attrname, *val, tmp;
+	zend_string *resolved_name;
+	zend_string *key;
+	// declared attributes are in structure: idx  => ["class" => "...", 0 => arg1, 1 => arg2, ...]
+	// resolved attributes are in structure fqcn => [ [0 => arg1, 1 => arg2], [0 => arg12, 1 => arg22] ]
+	HashTable *resolved_attributes;
+
+	ALLOC_HASHTABLE(resolved_attributes);
+	zend_hash_init(resolved_attributes, 8, NULL, ZVAL_PTR_DTOR, 0);
+
+	ZEND_HASH_FOREACH_STR_KEY_VAL(declared_attributes, key, attr) {
+		// @todo not yet "class" key with ast that stores ZEND_NAME_*,
+		// first step here is to have class name as key of attributes and always assume relative to imports
+		resolved_name = zend_resolve_class_name(key, ZEND_NAME_NOT_FQ);
+
+		ZVAL_NULL(&tmp);
+		val = zend_hash_add(resolved_attributes, resolved_name, &tmp);
+
+		if (val) {
+			array_init(val);
+		} else {
+			val = zend_hash_find(resolved_attributes, resolved_name);
+		}
+
+		zend_hash_next_index_insert(Z_ARRVAL_P(val), attr);
+		Z_TRY_ADDREF_P(attr);
+
+	} ZEND_HASH_FOREACH_END();
+
+	zend_hash_destroy(declared_attributes);
+
+	return resolved_attributes;
+}
+
 void zend_compile_func_decl(znode *result, zend_ast *ast, zend_bool toplevel) /* {{{ */
 {
 	zend_ast_decl *decl = (zend_ast_decl *) ast;
@@ -6251,7 +6287,7 @@ void zend_compile_func_decl(znode *result, zend_ast *ast, zend_bool toplevel) /*
 		op_array->doc_comment = zend_string_copy(decl->doc_comment);
 	}
 	if (decl->attributes) {
-		op_array->attributes = decl->attributes;
+		op_array->attributes = zend_compile_resolve_attributes(decl->attributes);
 		decl->attributes = NULL;
 	}
 	if (decl->kind == ZEND_AST_CLOSURE || decl->kind == ZEND_AST_ARROW_FUNC) {
@@ -6680,7 +6716,7 @@ zend_op *zend_compile_class_decl(zend_ast *ast, zend_bool toplevel) /* {{{ */
 		ce->info.user.doc_comment = zend_string_copy(decl->doc_comment);
 	}
 	if (decl->attributes) {
-		ce->info.user.attributes = decl->attributes;
+		ce->info.user.attributes = zend_compile_resolve_attributes(decl->attributes);
 		decl->attributes = NULL;
 	}
 

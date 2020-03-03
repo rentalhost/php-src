@@ -15,8 +15,7 @@ namespace Doctrine\ORM {
 		$reflClass = new \ReflectionClass($class_name);
 		$attrs = $reflClass->getAttributes();
 		foreach ($attrs as $name => $values) {
-			$name = "Doctrine\\" . $name;
-			$attrs[$name] = new $name($values);
+			$attrs[$name] = new $name($values[0][0]);
 		}
 		return $attrs;
 	}
@@ -24,6 +23,15 @@ namespace Doctrine\ORM {
 
 namespace Doctrine\ORM\Mapping {
     class Entity {
+        public $tableName;
+        public $repository;
+
+        public function __construct(array $values)
+        {
+            foreach ($values as $k => $v) {
+                $this->$k = $v;
+            }
+        }
     }
 }
 

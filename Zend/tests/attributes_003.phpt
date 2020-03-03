@@ -25,8 +25,11 @@ array(1) {
   array(1) {
     [0]=>
     array(1) {
-      ["foo"]=>
-      string(3) "bar"
+      [0]=>
+      array(1) {
+        ["foo"]=>
+        string(3) "bar"
+      }
     }
   }
 }
