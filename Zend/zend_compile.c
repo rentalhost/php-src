@@ -6222,7 +6222,7 @@ static HashTable* zend_compile_resolve_attributes(HashTable *declared_attributes
 	zend_string *resolved_name;
 	zend_string *key;
 	// declared attributes are in structure: idx  => ["class" => "...", 0 => arg1, 1 => arg2, ...]
-	// resolved attributes are in structure fqcn => [ [0 => arg1, 1 => arg2], [0 => arg12, 1 => arg22] ]
+	// resolved attributes are in structure fqcn => [0 => arg1, 1 => arg2, ..]
 	HashTable *resolved_attributes;
 
 	ALLOC_HASHTABLE(resolved_attributes);
@@ -6239,7 +6239,7 @@ static HashTable* zend_compile_resolve_attributes(HashTable *declared_attributes
 		if (val) {
 			array_init(val);
 		} else {
-			val = zend_hash_find(resolved_attributes, resolved_name);
+			zend_error_noreturn(E_COMPILE_ERROR, "Redeclared attribute %s", ZSTR_VAL(resolved_name));
 		}
 
 		zend_hash_next_index_insert(Z_ARRVAL_P(val), attr);
