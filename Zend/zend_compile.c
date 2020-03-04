@@ -9318,5 +9318,3 @@ void zend_eval_const_expr(zend_ast **ast_ptr) /* {{{ */
 	*ast_ptr = zend_ast_create_zval(&result);
 }
 /* }}} */
-
-
