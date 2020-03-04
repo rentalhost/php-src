@@ -234,7 +234,7 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 %type <ast> group_use_declaration inline_use_declarations inline_use_declaration
 %type <ast> mixed_group_use_declaration use_declaration unprefixed_use_declaration
 %type <ast> unprefixed_use_declarations const_decl inner_statement
-%type <ast> attribute_values expr optional_expr while_statement for_statement foreach_variable
+%type <ast> attribute_arguments expr optional_expr while_statement for_statement foreach_variable
 %type <ast> foreach_statement declare_statement finally_statement unset_variable variable
 %type <ast> extends_from parameter optional_type_without_static argument global_var
 %type <ast> static_var class_statement annotated_class_statement trait_adaptation trait_precedence trait_alias
@@ -314,14 +314,14 @@ name:
 	|	T_NS_SEPARATOR namespace_name				{ $$ = $2; $$->attr = ZEND_NAME_FQ; }
 ;
 
-attribute_values:
+attribute_arguments:
 		expr						{ $$ = $1; }
-	|	attribute_values ',' expr	{ $$ = zend_ast_add_attribute_value($1, $3); }
+	|	attribute_arguments ',' expr	{ $$ = zend_ast_add_attribute_value($1, $3); }
 ;
 
 attribute_decl:
 		class_name_reference												{ zend_ast_add_attribute($1, NULL); }
-	|	class_name_reference '(' attribute_values ')'						{ zend_ast_add_attribute($1, $3); }
+	|	class_name_reference '(' attribute_arguments ')'						{ zend_ast_add_attribute($1, $3); }
 ;
 
 attribute:

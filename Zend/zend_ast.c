@@ -2137,10 +2137,9 @@ ZEND_API void zend_ast_convert_to_object(zval *p, zend_ast *ast, zend_class_entr
 	}
 }
 
-ZEND_API zval *zend_ast_convert_attributes(HashTable *attributes, zend_class_entry *ce)
+zval *zend_ast_convert_attributes(HashTable *attributes, zend_class_entry *ce)
 {
 	zval *val, tmp;
-	HashTable *ht, *ht2;
 	zval *res = emalloc(sizeof(zval));
 
 	array_init(res);
@@ -2185,16 +2184,10 @@ void zend_ast_add_attribute(zend_ast *name, zend_ast *value) /* {{{ */
 		if (value->kind == ZEND_AST_ZVAL) {
 			zval *zv = zend_ast_get_zval(value);
 
-			if (Z_TYPE_P(zv) == IS_ARRAY) {
-				ZVAL_COPY_VALUE(val, zv);
-			} else {
-				array_init(val);
-				zend_hash_next_index_insert_new(Z_ARRVAL_P(val), zv);
-			}
+			ZVAL_COPY_VALUE(val, zv);
 		} else {
 			zend_const_expr_to_zval(&tmp, value);
-			array_init(val);
-			zend_hash_next_index_insert_new(Z_ARRVAL_P(val), &tmp);
+			ZVAL_COPY_VALUE(val, &tmp);
 		}
 	} else {
 		array_init(val);

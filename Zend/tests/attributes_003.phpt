@@ -5,10 +5,7 @@ Resolve attribute names
 function dump_attributes($attributes) {
     $arr = [];
     foreach ($attributes as $attribute) {
-        if (!isset($arr[$attribute->getName()])) {
-            $arr[$attribute->getName()] = [];
-        }
-        $arr[$attribute->getName()][] = $attribute->getArguments();
+        $arr[$attribute->getName()] = $attribute->getArguments();
     }
     var_dump($arr);
 }
@@ -35,11 +32,8 @@ array(1) {
   array(1) {
     [0]=>
     array(1) {
-      [0]=>
-      array(1) {
-        ["foo"]=>
-        string(3) "bar"
-      }
+      ["foo"]=>
+      string(3) "bar"
     }
   }
 }

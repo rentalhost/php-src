@@ -1057,24 +1057,19 @@ static void reflection_attribute_factory(zval *object, zend_string *name, zval *
 /* }}} */
 
 
-static zval* convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce)
+static void convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce)
 {
 	zend_string *attribute_name;
-	zval *attrs, *attr, *object;
+	zval *attr, *object;
 	zval *converted_attributes;
 
 	array_init(ret);
 
-	ZEND_HASH_FOREACH_STR_KEY_VAL(attributes, attribute_name, attrs) {
+	ZEND_HASH_FOREACH_STR_KEY_VAL(attributes, attribute_name, attr) {
 		if (attribute_name) {
-
-			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(attrs), attr) {
-				converted_attributes = zend_ast_convert_attributes(Z_ARRVAL_P(attr), ce);
-
-				reflection_attribute_factory(object, attribute_name, converted_attributes);
-
-				zend_hash_next_index_insert(Z_ARRVAL_P(ret), object);
-			} ZEND_HASH_FOREACH_END();
+			converted_attributes = zend_ast_convert_attributes(Z_ARRVAL_P(attr), ce);
+			reflection_attribute_factory(object, attribute_name, converted_attributes);
+			zend_hash_next_index_insert(Z_ARRVAL_P(ret), object);
 		}
 	} ZEND_HASH_FOREACH_END();
 }
