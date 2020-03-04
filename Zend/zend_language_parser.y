@@ -319,15 +319,13 @@ attribute_values:
 	|	attribute_values ',' expr	{ $$ = zend_ast_add_attribute_value($1, $3); }
 ;
 
-attribute_list:
+attribute_decl:
 		class_name_reference												{ zend_ast_add_attribute($1, NULL); }
 	|	class_name_reference '(' attribute_values ')'						{ zend_ast_add_attribute($1, $3); }
-	|	attribute_list ',' class_name_reference								{ zend_ast_add_attribute($3, NULL); }
-	|	attribute_list ',' class_name_reference '(' attribute_values ')'	{ zend_ast_add_attribute($3, $5); }
 ;
 
 attribute:
-		T_SL attribute_list T_SR
+		T_SL attribute_decl T_SR
 ;
 
 attributes:

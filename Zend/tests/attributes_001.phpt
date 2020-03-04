@@ -42,13 +42,18 @@ $r2 = $r->getProperty("x");
 dump_attributes($r2->getAttributes());
 
 // Multiple attributes with multiple values
-<<a1,a2(1),a3(1,2)>>
+<<a1>>
+<<a2(1)>>
+<<a3(1,2)>>
 function f1() {}
 $r = new ReflectionFunction("f1");
 dump_attributes($r->getAttributes());
 
 // Attributes with AST
-<<a1,a2(1+1),a3(1+3,2+2),a4(["a"=>1,"b"=>2])>>
+<<a1>>
+<<a2(1+1)>>
+<<a3(1+3,2+2)>>
+<<a4(["a"=>1,"b"=>2])>>
 function f2() {}
 $r = new ReflectionFunction("f2");
 dump_attributes($r->getAttributes());
