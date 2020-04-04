@@ -44,10 +44,6 @@
 		zend_string_release_ex(CG(doc_comment), 0); \
 		CG(doc_comment) = NULL; \
 	} \
-	if (CG(attributes)) { \
-		zend_array_ptr_dtor(CG(attributes)); \
-		CG(attributes) = NULL; \
-	} \
 } while (0)
 
 typedef struct _zend_op_array zend_op_array;

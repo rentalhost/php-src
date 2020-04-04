@@ -62,6 +62,7 @@ enum _zend_ast_kind {
 	ZEND_AST_TRAIT_ADAPTATIONS,
 	ZEND_AST_USE,
 	ZEND_AST_TYPE_UNION,
+	ZEND_AST_ATTRIBUTE_LIST,
 
 	/* 0 child nodes */
 	ZEND_AST_MAGIC_CONST = 0 << ZEND_AST_NUM_CHILDREN_SHIFT,
@@ -138,7 +139,8 @@ enum _zend_ast_kind {
 	ZEND_AST_USE_ELEM,
 	ZEND_AST_TRAIT_ALIAS,
 	ZEND_AST_GROUP_USE,
-	ZEND_AST_PROP_GROUP,
+	ZEND_AST_CLASS_CONST_DECL_ATTRIBUTES,
+	ZEND_AST_ATTRIBUTE,
 
 	/* 3 child nodes */
 	ZEND_AST_METHOD_CALL = 3 << ZEND_AST_NUM_CHILDREN_SHIFT,
@@ -147,13 +149,14 @@ enum _zend_ast_kind {
 
 	ZEND_AST_TRY,
 	ZEND_AST_CATCH,
-	ZEND_AST_PARAM,
+	ZEND_AST_PROP_ELEM,
+	ZEND_AST_CONST_ELEM,
 
 	/* 4 child nodes */
 	ZEND_AST_FOR = 4 << ZEND_AST_NUM_CHILDREN_SHIFT,
 	ZEND_AST_FOREACH,
-	ZEND_AST_PROP_ELEM,
-	ZEND_AST_CONST_ELEM,
+	ZEND_AST_PROP_GROUP,
+	ZEND_AST_PARAM,
 };
 
 typedef uint16_t zend_ast_kind;
@@ -191,7 +194,7 @@ typedef struct _zend_ast_decl {
 	uint32_t flags;
 	unsigned char *lex_pos;
 	zend_string *doc_comment;
-	HashTable *attributes;
+	zend_ast *attributes;
 	zend_string *name;
 	zend_ast *child[4];
 } zend_ast_decl;
@@ -270,7 +273,7 @@ ZEND_API zend_ast *zend_ast_create_list(uint32_t init_children, zend_ast_kind ki
 ZEND_API zend_ast * ZEND_FASTCALL zend_ast_list_add(zend_ast *list, zend_ast *op);
 
 ZEND_API zend_ast *zend_ast_create_decl(
-	zend_ast_kind kind, uint32_t flags, uint32_t start_lineno, zend_string *doc_comment, HashTable *attributes,
+	zend_ast_kind kind, uint32_t flags, uint32_t start_lineno, zend_string *doc_comment,
 	zend_string *name, zend_ast *child0, zend_ast *child1, zend_ast *child2, zend_ast *child3
 );
 
@@ -354,7 +357,7 @@ static zend_always_inline zend_ast *zend_ast_list_rtrim(zend_ast *ast) {
 	return ast;
 }
 
-void zend_ast_add_attribute(zend_ast *name, zend_ast *value);
-zend_ast *zend_ast_add_attribute_value(zend_ast *list_ast, zend_ast *val_ast);
-zval *zend_ast_convert_attributes(HashTable *attributes, zend_class_entry *ce);
+zend_ast * ZEND_FASTCALL zend_ast_with_attributes(zend_ast *ast, zend_ast *attr);
+int zend_ast_convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce);
+
 #endif
