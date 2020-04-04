@@ -60,7 +60,7 @@ ZEND_END_ARG_INFO()
 #define arginfo_class_ReflectionFunctionAbstract_getReturnType arginfo_class_Reflector___toString
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionFunctionAbstract_getAttributes, 0, 0, 0)
-	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionFunction___construct, 0, 0, 1)
@@ -397,6 +397,8 @@ ZEND_END_ARG_INFO()
 #define arginfo_class_ReflectionParameter_getDefaultValueConstantName arginfo_class_Reflector___toString
 
 #define arginfo_class_ReflectionParameter_isVariadic arginfo_class_Reflector___toString
+
+#define arginfo_class_ReflectionParameter_getAttributes arginfo_class_ReflectionFunctionAbstract_getAttributes
 
 #define arginfo_class_ReflectionType___clone arginfo_class_Reflector___toString
 

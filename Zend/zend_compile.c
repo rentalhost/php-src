@@ -1063,6 +1063,10 @@ ZEND_API void function_add_ref(zend_function *function) /* {{{ */
 			ZEND_MAP_PTR_INIT(op_array->run_time_cache, zend_arena_alloc(&CG(arena), sizeof(void*)));
 			ZEND_MAP_PTR_SET(op_array->run_time_cache, NULL);
 		}
+
+		if (op_array->attributes) {
+			GC_ADDREF(op_array->attributes);
+		}
 	} else if (function->type == ZEND_INTERNAL_FUNCTION) {
 		if (function->common.function_name) {
 			zend_string_addref(function->common.function_name);
