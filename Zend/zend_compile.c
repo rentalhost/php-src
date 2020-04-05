@@ -5729,19 +5729,14 @@ static void zend_compile_attribute(zval *v, zend_ast *ast) /* {{{ */
 	if (ast->child[1]) {
 		zend_ast_list *list;
 		uint32_t i;
-
 		zval tmp;
-		zval *x;
 
 		ZEND_ASSERT(ast->child[1]->kind == ZEND_AST_ARG_LIST);
 
 		ZVAL_NULL(&tmp);
 
 		for (list = zend_ast_get_list(ast->child[1]), i = 0; i < list->children; i++) {
-			zend_ast *el = list->child[i];
-
-			x = zend_hash_next_index_insert(Z_ARRVAL_P(v), &tmp);
-			zend_const_expr_to_zval(x, el);
+			zend_const_expr_to_zval(zend_hash_next_index_insert(Z_ARRVAL_P(v), &tmp), list->child[i]);
 		}
 	}
 }
@@ -5782,14 +5777,13 @@ static HashTable *zend_compile_attributes(zend_ast *ast) /* {{{ */
 				add_next_index_zval(x, &a);
 			} else {
 				zval array;
-				zval ref;
 
 				ZEND_ASSERT(Z_TYPE_P(zend_hash_index_find(Z_ARRVAL_P(x), 0)) == IS_STRING);
 
-				ZVAL_COPY(&ref, x);
+				Z_ADDREF_P(x);
 
 				array_init(&array);
-				add_next_index_zval(&array, &ref);
+				add_next_index_zval(&array, x);
 				add_next_index_zval(&array, &a);
 				zend_hash_update(attr, name, &array);
 			}
