@@ -21,7 +21,7 @@ $functions = [
     'bool' => function ($b): bool { return $b; }
 ];
 
-class Stringable {
+class StringCapable {
     public function __toString() {
         return "foobar";
     }
@@ -42,7 +42,7 @@ $values = [
     NULL,
     [],
     new StdClass,
-    new Stringable,
+    new StringCapable,
     fopen("data:text/plain,foobar", "r")
 ];
 
@@ -94,7 +94,7 @@ int(0)
 *** Trying object(stdClass)#6 (0) {
 }
 *** Caught Return value of {closure}() must be of type int, object returned in %s on line %d
-*** Trying object(Stringable)#7 (0) {
+*** Trying object(StringCapable)#7 (0) {
 }
 *** Caught Return value of {closure}() must be of type int, object returned in %s on line %d
 *** Trying resource(5) of type (stream)
@@ -117,7 +117,7 @@ float(1)
 *** Trying string(0) ""
 *** Caught Return value of {closure}() must be of type float, string returned in %s on line %d
 *** Trying int(9223372036854775807)
-float(9.2233720368548E+18)
+float(9.223372036854776E+18)
 *** Trying float(NAN)
 float(NAN)
 *** Trying bool(true)
@@ -132,7 +132,7 @@ float(0)
 *** Trying object(stdClass)#6 (0) {
 }
 *** Caught Return value of {closure}() must be of type float, object returned in %s on line %d
-*** Trying object(Stringable)#7 (0) {
+*** Trying object(StringCapable)#7 (0) {
 }
 *** Caught Return value of {closure}() must be of type float, object returned in %s on line %d
 *** Trying resource(5) of type (stream)
@@ -169,7 +169,7 @@ string(0) ""
 *** Trying object(stdClass)#6 (0) {
 }
 *** Caught Return value of {closure}() must be of type string, object returned in %s on line %d
-*** Trying object(Stringable)#7 (0) {
+*** Trying object(StringCapable)#7 (0) {
 }
 string(6) "foobar"
 *** Trying resource(5) of type (stream)
@@ -206,7 +206,7 @@ bool(false)
 *** Trying object(stdClass)#6 (0) {
 }
 *** Caught Return value of {closure}() must be of type bool, object returned in %s on line %d
-*** Trying object(Stringable)#7 (0) {
+*** Trying object(StringCapable)#7 (0) {
 }
 *** Caught Return value of {closure}() must be of type bool, object returned in %s on line %d
 *** Trying resource(5) of type (stream)
