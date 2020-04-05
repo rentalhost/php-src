@@ -6526,7 +6526,7 @@ void zend_compile_prop_group(zend_ast *list) /* {{{ */
 	zend_ast *type_ast = list->child[0];
 	zend_ast *prop_ast = list->child[1];
 
-	attributes = list->child[3] ? zend_compile_attributes(list->child[3]) : NULL;
+	attributes = list->child[2] ? zend_compile_attributes(list->child[2]) : NULL;
 
 	zend_compile_prop_decl(prop_ast, type_ast, list->attr, attributes);
 

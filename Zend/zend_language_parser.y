@@ -782,7 +782,7 @@ class_statement_list:
 
 annotated_class_statement:
 		variable_modifiers optional_type_without_static property_list ';'
-			{ $$ = zend_ast_create(ZEND_AST_PROP_GROUP, $2, $3, NULL, NULL);
+			{ $$ = zend_ast_create(ZEND_AST_PROP_GROUP, $2, $3, NULL);
 			  $$->attr = $1; }
 	|	method_modifiers T_CONST class_const_list ';'
 			{ $$ = $3; $$->attr = $1; }

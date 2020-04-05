@@ -2142,7 +2142,7 @@ zend_ast * ZEND_FASTCALL zend_ast_with_attributes(zend_ast *ast, zend_ast *attr)
 		ast->lineno = ast->child[0]->lineno;
 		break;
 	default:
-		zend_ast_destroy(attr);
+		zend_error_noreturn(E_COMPILE_ERROR, "Invalid use of attributes");
 	}
 
 	return ast;
