@@ -76,6 +76,25 @@
 		} \
 	} while (0)
 
+#define zend_persist_attributes(attr) do { \
+	HashTable *ptr = zend_shared_alloc_get_xlat_entry(attr); \
+	if (ptr) { \
+		(attr) = ptr; \
+	} else { \
+		Bucket *p; \
+		zend_hash_persist(attr); \
+		ZEND_HASH_FOREACH_BUCKET((attr), p) { \
+			if (p->key) { \
+				zend_accel_store_interned_string(p->key); \
+			} \
+			zend_persist_zval(&p->val); \
+		} ZEND_HASH_FOREACH_END(); \
+		(attr) = zend_shared_memdup_put_free((attr), sizeof(HashTable)); \
+		GC_SET_REFCOUNT((attr), 2); \
+		GC_TYPE_INFO(attr) = IS_ARRAY | (IS_ARRAY_IMMUTABLE << GC_FLAGS_SHIFT); \
+	} \
+} while (0)
+
 typedef void (*zend_persist_func_t)(zval*);
 
 static void zend_persist_zval(zval *z);
@@ -375,6 +394,9 @@ static void zend_persist_op_array_ex(zend_op_array *op_array, zend_persistent_sc
 					op_array->doc_comment = NULL;
 				}
 			}
+			if (op_array->attributes) {
+				zend_persist_attributes(op_array->attributes);
+			}
 
 			if (op_array->try_catch_array) {
 				op_array->try_catch_array = zend_shared_alloc_get_xlat_entry(op_array->try_catch_array);
@@ -553,18 +575,7 @@ static void zend_persist_op_array_ex(zend_op_array *op_array, zend_persistent_sc
 	}
 
 	if (op_array->attributes) {
-		if (already_stored) {
-			op_array->attributes = zend_shared_alloc_get_xlat_entry(op_array->attributes);
-			ZEND_ASSERT(op_array->attributes != NULL);
-		} else {
-			zend_hash_persist(op_array->attributes, zend_persist_zval);
-			zend_accel_store(op_array->attributes, sizeof(HashTable));
-			/* make immutable array */
-			GC_REFCOUNT(op_array->attributes) = 2;
-			GC_TYPE_INFO(op_array->attributes) = IS_ARRAY | (IS_ARRAY_IMMUTABLE << 8);
-			op_array->attributes->u.flags |= HASH_FLAG_STATIC_KEYS;
-			op_array->attributes->u.flags &= ~HASH_FLAG_APPLY_PROTECTION;
-		}
+		zend_persist_attributes(op_array->attributes);
 	}
 
 	if (op_array->try_catch_array) {
@@ -710,13 +721,7 @@ static void zend_persist_property_info(zval *zv)
 		}
 	}
 	if (prop->attributes) {
-		zend_hash_persist(prop->attributes, zend_persist_zval);
-		zend_accel_store(prop->attributes, sizeof(HashTable));
-		/* make immutable array */
-		GC_REFCOUNT(prop->attributes) = 2;
-		GC_TYPE_INFO(prop->attributes) = IS_ARRAY | (IS_ARRAY_IMMUTABLE << 8);
-		prop->attributes->u.flags |= HASH_FLAG_STATIC_KEYS;
-		prop->attributes->u.flags &= ~HASH_FLAG_APPLY_PROTECTION;
+		zend_persist_attributes(prop->attributes);
 	}
 	zend_persist_type(&prop->type);
 }
@@ -758,13 +763,7 @@ static void zend_persist_class_constant(zval *zv)
 		}
 	}
 	if (c->attributes) {
-		zend_hash_persist(c->attributes, zend_persist_zval);
-		zend_accel_store(c->attributes, sizeof(HashTable));
-		/* make immutable array */
-		GC_REFCOUNT(c->attributes) = 2;
-		GC_TYPE_INFO(c->attributes) = IS_ARRAY | (IS_ARRAY_IMMUTABLE << 8);
-		c->attributes->u.flags |= HASH_FLAG_STATIC_KEYS;
-		c->attributes->u.flags &= ~HASH_FLAG_APPLY_PROTECTION;
+		zend_persist_attributes(c->attributes);
 	}
 }
 
@@ -853,13 +852,7 @@ static void zend_persist_class_entry(zval *zv)
 			}
 		}
 		if (ce->info.user.attributes) {
-			zend_hash_persist(ce->info.user.attributes, zend_persist_zval);
-			zend_accel_store(ce->info.user.attributes, sizeof(HashTable));
-			/* make immutable array */
-			GC_REFCOUNT(ce->info.user.attributes) = 2;
-			GC_TYPE_INFO(ce->info.user.attributes) = IS_ARRAY | (IS_ARRAY_IMMUTABLE << 8);
-			ce->info.user.attributes->u.flags |= HASH_FLAG_STATIC_KEYS;
-			ce->info.user.attributes->u.flags &= ~HASH_FLAG_APPLY_PROTECTION;
+			zend_persist_attributes(ce->info.user.attributes);
 		}
 		zend_hash_persist(&ce->properties_info);
 		ZEND_HASH_FOREACH_BUCKET(&ce->properties_info, p) {

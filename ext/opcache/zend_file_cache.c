@@ -158,6 +158,25 @@ static int zend_file_cache_flock(int fd, int type)
 		} \
 	} while (0)
 
+#define SERIALIZE_ATTRIBUTES(attr) do { \
+	if ((attr) && !IS_SERIALIZED(attr)) { \
+		HashTable *ht; \
+		SERIALIZE_PTR(attr); \
+		ht = (attr); \
+		UNSERIALIZE_PTR(ht); \
+		zend_file_cache_serialize_hash(ht, script, info, buf, zend_file_cache_serialize_zval); \
+	} \
+} while (0)
+
+#define UNSERIALIZE_ATTRIBUTES(attr) do { \
+	if ((attr) && !IS_UNSERIALIZED(attr)) { \
+		HashTable *ht; \
+		UNSERIALIZE_PTR(attr); \
+		ht = (attr); \
+		zend_file_cache_unserialize_hash(ht, script, buf, zend_file_cache_unserialize_zval, ZVAL_PTR_DTOR); \
+	} \
+} while (0)
+
 static const uint32_t uninitialized_bucket[-HT_MIN_MASK] =
 	{HT_INVALID_IDX, HT_INVALID_IDX};
 
@@ -421,14 +440,7 @@ static void zend_file_cache_serialize_op_array(zend_op_array            *op_arra
 			SERIALIZE_PTR(op_array->live_range);
 			SERIALIZE_PTR(op_array->scope);
 			SERIALIZE_STR(op_array->doc_comment);
-			if (op_array->attributes && !IS_SERIALIZED(op_array->attributes)) {
-				HashTable *ht;
-
-				SERIALIZE_PTR(op_array->attributes);
-				ht = op_array->attributes;
-				UNSERIALIZE_PTR(ht);
-				zend_file_cache_serialize_hash(ht, script, info, buf, zend_file_cache_serialize_zval);
-			}
+			SERIALIZE_ATTRIBUTES(op_array->attributes);
 			SERIALIZE_PTR(op_array->try_catch_array);
 			SERIALIZE_PTR(op_array->prototype);
 			return;
@@ -555,6 +567,7 @@ static void zend_file_cache_serialize_op_array(zend_op_array            *op_arra
 		SERIALIZE_PTR(op_array->live_range);
 		SERIALIZE_PTR(op_array->scope);
 		SERIALIZE_STR(op_array->doc_comment);
+		SERIALIZE_ATTRIBUTES(op_array->attributes);
 		SERIALIZE_PTR(op_array->try_catch_array);
 		SERIALIZE_PTR(op_array->prototype);
 
@@ -599,15 +612,7 @@ static void zend_file_cache_serialize_prop_info(zval                     *zv,
 			if (prop->doc_comment) {
 				SERIALIZE_STR(prop->doc_comment);
 			}
-
-			if (prop->attributes) {
-				HashTable *ht;
-
-				SERIALIZE_PTR(prop->attributes);
-				ht = prop->attributes;
-				UNSERIALIZE_PTR(ht);
-				zend_file_cache_serialize_hash(ht, script, info, buf, zend_file_cache_serialize_zval);
-			}
+			SERIALIZE_ATTRIBUTES(prop->attributes);
 
 			zend_file_cache_serialize_type(&prop->type, script, info, buf);
 		}
@@ -636,14 +641,7 @@ static void zend_file_cache_serialize_class_constant(zval                     *z
 				SERIALIZE_STR(c->doc_comment);
 			}
 
-			if (c->attributes) {
-				HashTable *ht;
-
-				SERIALIZE_PTR(c->attributes);
-				ht = c->attributes;
-				UNSERIALIZE_PTR(ht);
-				zend_file_cache_serialize_hash(ht, script, info, buf, zend_file_cache_serialize_zval);
-			}
+			SERIALIZE_ATTRIBUTES(c->attributes);
 		}
 	}
 }
@@ -701,14 +699,7 @@ static void zend_file_cache_serialize_class(zval                     *zv,
 	zend_file_cache_serialize_hash(&ce->constants_table, script, info, buf, zend_file_cache_serialize_class_constant);
 	SERIALIZE_STR(ce->info.user.filename);
 	SERIALIZE_STR(ce->info.user.doc_comment);
-	if (ce->info.user.attributes && !IS_SERIALIZED(ce->info.user.attributes)) {
-		HashTable *ht;
-
-		SERIALIZE_PTR(ce->info.user.attributes);
-		ht = ce->info.user.attributes;
-		UNSERIALIZE_PTR(ht);
-		zend_file_cache_serialize_hash(ht, script, info, buf, zend_file_cache_serialize_zval);
-	}
+	SERIALIZE_ATTRIBUTES(ce->info.user.attributes);
 	zend_file_cache_serialize_hash(&ce->properties_info, script, info, buf, zend_file_cache_serialize_prop_info);
 
 	if (ce->properties_info_table) {
@@ -1174,6 +1165,7 @@ static void zend_file_cache_unserialize_op_array(zend_op_array           *op_arr
 		UNSERIALIZE_PTR(op_array->live_range);
 		UNSERIALIZE_PTR(op_array->scope);
 		UNSERIALIZE_STR(op_array->doc_comment);
+		UNSERIALIZE_ATTRIBUTES(op_array->attributes);
 		UNSERIALIZE_PTR(op_array->try_catch_array);
 		UNSERIALIZE_PTR(op_array->prototype);
 		return;
@@ -1289,14 +1281,7 @@ static void zend_file_cache_unserialize_op_array(zend_op_array           *op_arr
 		UNSERIALIZE_PTR(op_array->live_range);
 		UNSERIALIZE_PTR(op_array->scope);
 		UNSERIALIZE_STR(op_array->doc_comment);
-		if (op_array->attributes && !IS_UNSERIALIZED(op_array->attributes)) {
-			HashTable *ht;
-
-			UNSERIALIZE_PTR(op_array->attributes);
-			ht = op_array->attributes;
-			zend_file_cache_unserialize_hash(ht,
-					script, buf, zend_file_cache_unserialize_zval, ZVAL_PTR_DTOR);
-		}
+		UNSERIALIZE_ATTRIBUTES(op_array->attributes);
 		UNSERIALIZE_PTR(op_array->try_catch_array);
 		UNSERIALIZE_PTR(op_array->prototype);
 
@@ -1350,14 +1335,7 @@ static void zend_file_cache_unserialize_prop_info(zval                    *zv,
 			if (prop->doc_comment) {
 				UNSERIALIZE_STR(prop->doc_comment);
 			}
-			if (prop->attributes && !IS_UNSERIALIZED(prop->attributes)) {
-				HashTable *ht;
-
-				UNSERIALIZE_PTR(prop->attributes);
-				ht = prop->attributes;
-				zend_file_cache_unserialize_hash(ht,
-						script, buf, zend_file_cache_unserialize_zval, ZVAL_PTR_DTOR);
-			}
+			UNSERIALIZE_ATTRIBUTES(prop->attributes);
 			zend_file_cache_unserialize_type(&prop->type, script, buf);
 		}
 	}
@@ -1382,14 +1360,7 @@ static void zend_file_cache_unserialize_class_constant(zval                    *
 			if (c->doc_comment) {
 				UNSERIALIZE_STR(c->doc_comment);
 			}
-			if (c->attributes && !IS_UNSERIALIZED(c->attributes)) {
-				HashTable *ht;
-
-				UNSERIALIZE_PTR(c->attributes);
-				ht = c->attributes;
-				zend_file_cache_unserialize_hash(ht,
-						script, buf, zend_file_cache_unserialize_zval, ZVAL_PTR_DTOR);
-			}
+			UNSERIALIZE_ATTRIBUTES(c->attributes);
 		}
 	}
 }
@@ -1444,14 +1415,7 @@ static void zend_file_cache_unserialize_class(zval                    *zv,
 			script, buf, zend_file_cache_unserialize_class_constant, NULL);
 	UNSERIALIZE_STR(ce->info.user.filename);
 	UNSERIALIZE_STR(ce->info.user.doc_comment);
-	if (ce->info.user.attributes && !IS_UNSERIALIZED(ce->info.user.attributes)) {
-		HashTable *ht;
-
-		UNSERIALIZE_PTR(ce->info.user.attributes);
-		ht = ce->info.user.attributes;
-		zend_file_cache_unserialize_hash(ht,
-				script, buf, zend_file_cache_unserialize_zval, ZVAL_PTR_DTOR);
-	}
+	UNSERIALIZE_ATTRIBUTES(ce->info.user.attributes);
 	zend_file_cache_unserialize_hash(&ce->properties_info,
 			script, buf, zend_file_cache_unserialize_prop_info, NULL);
 
