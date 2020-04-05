@@ -1055,11 +1055,11 @@ static void reflection_attribute_factory(zval *object, zend_string *name, zval *
 }
 /* }}} */
 
-static int convert_ast_to_zval(zval *ret, zend_ast *ast, zend_class_entry *ce)
+static int convert_ast_to_zval(zval *ret, zend_ast *ast, zend_class_entry *scope_ce)
 {
 	if (ast->kind == ZEND_AST_CONSTANT) {
 		zend_string *name = zend_ast_get_constant_name(ast);
-		zval *zv = zend_get_constant_ex(name, ce, ast->attr);
+		zval *zv = zend_get_constant_ex(name, scope_ce, ast->attr);
 
 		if (UNEXPECTED(zv == NULL)) {
 			return FAILURE;
@@ -1069,7 +1069,7 @@ static int convert_ast_to_zval(zval *ret, zend_ast *ast, zend_class_entry *ce)
 	} else {
 		zval tmp;
 
-		if (UNEXPECTED(zend_ast_evaluate(&tmp, ast, ce) != SUCCESS)) {
+		if (UNEXPECTED(zend_ast_evaluate(&tmp, ast, scope_ce) != SUCCESS)) {
 			return FAILURE;
 		}
 
@@ -1080,7 +1080,7 @@ static int convert_ast_to_zval(zval *ret, zend_ast *ast, zend_class_entry *ce)
 	return SUCCESS;
 }
 
-static int convert_ast_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce)
+static int convert_ast_attributes(zval *ret, HashTable *attributes, zend_class_entry *scope_ce)
 {
 	Bucket *p;
 	zval tmp;
@@ -1093,7 +1093,7 @@ static int convert_ast_attributes(zval *ret, HashTable *attributes, zend_class_e
 		}
 
 		if (Z_TYPE(p->val) == IS_CONSTANT_AST) {
-			if (FAILURE == convert_ast_to_zval(&tmp, Z_ASTVAL(p->val), ce)) {
+			if (FAILURE == convert_ast_to_zval(&tmp, Z_ASTVAL(p->val), scope_ce)) {
 				return FAILURE;
 			}
 
@@ -1107,7 +1107,7 @@ static int convert_ast_attributes(zval *ret, HashTable *attributes, zend_class_e
 	return SUCCESS;
 }
 
-static int convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *ce)
+static int convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *scope_ce)
 {
 	Bucket *p;
 	zval *v;
@@ -1128,7 +1128,7 @@ static int convert_attributes(zval *ret, HashTable *attributes, zend_class_entry
 		v = zend_hash_index_find(Z_ARRVAL(p->val), 0);
 
 		if (Z_TYPE_P(v) == IS_STRING) {
-			if (FAILURE == convert_ast_attributes(&result, Z_ARRVAL(p->val), ce)) {
+			if (FAILURE == convert_ast_attributes(&result, Z_ARRVAL(p->val), scope_ce)) {
 				zval_ptr_dtor(ret);
 				return FAILURE;
 			}
@@ -1144,7 +1144,7 @@ static int convert_attributes(zval *ret, HashTable *attributes, zend_class_entry
 			ZEND_HASH_FOREACH_VAL(Z_ARRVAL(p->val), zv) {
 				ZEND_ASSERT(Z_TYPE_P(zv) == IS_ARRAY);
 
-				if (FAILURE == convert_ast_attributes(&result, Z_ARRVAL_P(zv), ce)) {
+				if (FAILURE == convert_ast_attributes(&result, Z_ARRVAL_P(zv), scope_ce)) {
 					zval_ptr_dtor(ret);
 					return FAILURE;
 				}

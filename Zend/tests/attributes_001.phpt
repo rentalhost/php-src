@@ -70,68 +70,106 @@ array(0) {
 }
 array(1) {
   ["TestFunction"]=>
-  array(0) {
+  array(1) {
+    [0]=>
+    array(0) {
+    }
   }
 }
 array(1) {
   ["TestClass"]=>
-  array(0) {
+  array(1) {
+    [0]=>
+    array(0) {
+    }
   }
 }
 array(1) {
   ["TestConst"]=>
-  array(0) {
+  array(1) {
+    [0]=>
+    array(0) {
+    }
   }
 }
 array(1) {
   ["TestProp"]=>
-  array(0) {
+  array(1) {
+    [0]=>
+    array(0) {
+    }
   }
 }
 array(3) {
   ["a1"]=>
-  array(0) {
+  array(1) {
+    [0]=>
+    array(0) {
+    }
   }
   ["a2"]=>
   array(1) {
     [0]=>
-    int(1)
+    array(1) {
+      [0]=>
+      int(1)
+    }
   }
   ["a3"]=>
-  array(2) {
+  array(1) {
     [0]=>
-    int(1)
-    [1]=>
-    int(2)
+    array(2) {
+      [0]=>
+      int(1)
+      [1]=>
+      int(2)
+    }
   }
 }
 array(4) {
   ["a1"]=>
-  array(0) {
+  array(1) {
+    [0]=>
+    array(0) {
+    }
   }
   ["a2"]=>
   array(1) {
     [0]=>
-    int(2)
+    array(1) {
+      [0]=>
+      int(2)
+    }
   }
   ["a3"]=>
   array(1) {
     [0]=>
-    int(4)
+    array(2) {
+      [0]=>
+      int(4)
+      [1]=>
+      int(4)
+    }
   }
   ["a4"]=>
   array(1) {
     [0]=>
-    array(2) {
-      ["a"]=>
-      int(1)
-      ["b"]=>
-      int(2)
+    array(1) {
+      [0]=>
+      array(2) {
+        ["a"]=>
+        int(1)
+        ["b"]=>
+        int(2)
+      }
     }
   }
 }
 array(1) {
   ["Foo\Bar"]=>
-  array(0) {
+  array(1) {
+    [0]=>
+    array(0) {
+    }
   }
 }
