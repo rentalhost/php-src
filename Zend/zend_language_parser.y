@@ -322,6 +322,8 @@ attribute_arguments:
 attribute_decl:
 		class_name_reference
 			{ $$ = zend_ast_create(ZEND_AST_ATTRIBUTE, $1, NULL); }
+	|	class_name_reference '(' ')'
+			{ $$ = zend_ast_create(ZEND_AST_ATTRIBUTE, $1, NULL); }
 	|	class_name_reference '(' attribute_arguments ')'
 			{ $$ = zend_ast_create(ZEND_AST_ATTRIBUTE, $1, $3); }
 ;
