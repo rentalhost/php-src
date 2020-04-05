@@ -326,13 +326,9 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_ReflectionProperty_getDefaultValue arginfo_class_ReflectionFunctionAbstract___clone
 
-<<<<<<< HEAD
 #define arginfo_class_ReflectionProperty_getAttributes arginfo_class_ReflectionFunctionAbstract_getAttributes
 
-#define arginfo_class_ReflectionClassConstant___clone arginfo_class_Reflector___toString
-=======
 #define arginfo_class_ReflectionClassConstant___clone arginfo_class_ReflectionFunctionAbstract___clone
->>>>>>> master
 
 #define arginfo_class_ReflectionClassConstant___construct arginfo_class_ReflectionProperty___construct
 
@@ -354,13 +350,9 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_ReflectionClassConstant_getDocComment arginfo_class_ReflectionFunctionAbstract___clone
 
-<<<<<<< HEAD
 #define arginfo_class_ReflectionClassConstant_getAttributes arginfo_class_ReflectionFunctionAbstract_getAttributes
 
-#define arginfo_class_ReflectionParameter___clone arginfo_class_Reflector___toString
-=======
 #define arginfo_class_ReflectionParameter___clone arginfo_class_ReflectionFunctionAbstract___clone
->>>>>>> master
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionParameter___construct, 0, 0, 2)
 	ZEND_ARG_INFO(0, function)
@@ -405,13 +397,9 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_ReflectionParameter_isVariadic arginfo_class_ReflectionFunctionAbstract___clone
 
-<<<<<<< HEAD
 #define arginfo_class_ReflectionParameter_getAttributes arginfo_class_ReflectionFunctionAbstract_getAttributes
 
-#define arginfo_class_ReflectionType___clone arginfo_class_Reflector___toString
-=======
 #define arginfo_class_ReflectionType___clone arginfo_class_ReflectionFunctionAbstract___clone
->>>>>>> master
 
 #define arginfo_class_ReflectionType_allowsNull arginfo_class_ReflectionFunctionAbstract___clone
 
@@ -473,24 +461,19 @@ ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_class_ReflectionReference_fromArr
 	ZEND_ARG_INFO(0, key)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_ReflectionReference_getId, 0, 0, IS_STRING, 0)
-ZEND_END_ARG_INFO()
+#define arginfo_class_ReflectionReference_getId arginfo_class_ReflectionFunction___toString
 
 #define arginfo_class_ReflectionReference___clone arginfo_class_ReflectionFunctionAbstract___clone
 
-<<<<<<< HEAD
-#define arginfo_class_ReflectionReference___construct arginfo_class_Reflector___toString
+#define arginfo_class_ReflectionReference___construct arginfo_class_ReflectionFunctionAbstract___clone
 
-#define arginfo_class_ReflectionAttribute_getName arginfo_class_ReflectionReference_getId
+#define arginfo_class_ReflectionAttribute_getName arginfo_class_ReflectionFunction___toString
 
 #define arginfo_class_ReflectionAttribute_getArguments arginfo_class_ReflectionUnionType_getTypes
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_ReflectionAttribute_getAsObject, 0, 0, IS_OBJECT, 0)
 ZEND_END_ARG_INFO()
 
-#define arginfo_class_ReflectionAttribute___clone arginfo_class_Reflector___toString
+#define arginfo_class_ReflectionAttribute___clone arginfo_class_ReflectionFunctionAbstract___clone
 
-#define arginfo_class_ReflectionAttribute___construct arginfo_class_Reflector___toString
-=======
-#define arginfo_class_ReflectionReference___construct arginfo_class_ReflectionFunctionAbstract___clone
->>>>>>> master
+#define arginfo_class_ReflectionAttribute___construct arginfo_class_ReflectionFunctionAbstract___clone
