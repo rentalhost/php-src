@@ -1,168 +1,112 @@
 --TEST--
-Basic attributes usage on all elements
+Attributes can be placed on all supported elements.
 --FILE--
 <?php
-class Attr {
-    public $element;
 
-    public function __construct(string $element) {
-        $this->element = $element;
+<<A1(1)>>
+class Foo
+{
+    <<A1(2)>>
+    public const FOO = 'foo', BAR = 'bar';
+    
+    <<A1(3)>>
+    public $x, $y;
+    
+    <<A1(4)>>
+    public function foo(<<A1(5)>> $a, <<A1(6)>> $b) { }
+}
+
+$object = new <<A1(7)>> class () { };
+
+<<A1(8)>>
+function f1() { }
+
+$f2 = <<A1(9)>> function () { };
+
+$f3 = <<A1(10)>> fn () => 1;
+
+$ref = new \ReflectionClass(Foo::class);
+
+$sources = [
+    $ref,
+    $ref->getReflectionConstant('FOO'),
+    $ref->getReflectionConstant('BAR'),
+    $ref->getProperty('x'),
+    $ref->getProperty('y'),
+    $ref->getMethod('foo'),
+    $ref->getMethod('foo')->getParameters()[0],
+    $ref->getMethod('foo')->getParameters()[1],
+    new \ReflectionObject($object),
+    new \ReflectionFunction('f1'),
+    new \ReflectionFunction($f2),
+    new \ReflectionFunction($f3)
+];
+
+foreach ($sources as $r) {
+    foreach ($r->getAttributes() as $attr) {
+        var_dump($attr->getName(), $attr->getArguments());
     }
 }
-class OtherAttr {}
 
-function dump_attributes($reflection) {
-    $arr = [];
-    foreach ($reflection->getAttributes() as $attribute) {
-        if (!isset($arr[$attribute->getName()])) {
-            $arr[$attribute->getName()] = [];
-        }
-        $arr[$attribute->getName()][] = $attribute->getArguments();
-    }
-    var_dump($arr);
-}
-
-function f0() {}
-dump_attributes(new ReflectionFunction("f0"));
-
-<<Attr("function")>>
-function foo() {}
-dump_attributes(new ReflectionFunction("foo"));
-
-// Class attributes
-<<Attr("class")>>
-class Bar {
-	<<Attr("const")>>
-	const C = 2;
-	<<Attr("property")>>
-	public $x = 3;
-
-}
-$reflectionClass = new ReflectionClass("Bar");
-dump_attributes($reflectionClass);
-dump_attributes($reflectionClass->getReflectionConstant("C"));
-dump_attributes($reflectionClass->getProperty("x"));
-
-$foo = <<Attr("closure")>>function () {};
-dump_attributes(new ReflectionFunction($foo));
-
-$foo = <<Attr("short closure")>>fn ($x) => $x;
-dump_attributes(new ReflectionFunction($foo));
-
-$anonClass = new <<Attr("anon class")>>class {};
-dump_attributes(new ReflectionClass($anonClass));
-
-// Multiple attributes with multiple values
-<<Attr()>>
-<<OtherAttr()>>
-function f1() {}
-dump_attributes(new ReflectionFunction("f1"));
-
-// multiple instances of same attribute
-<<Attr("foo")>>
-<<Attr("bar")>>
-function f2() {}
-dump_attributes(new ReflectionFunction("f2"));
 ?>
 --EXPECT--
-array(0) {
-}
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(8) "function"
-    }
-  }
+  [0]=>
+  int(1)
 }
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(5) "class"
-    }
-  }
+  [0]=>
+  int(2)
 }
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(5) "const"
-    }
-  }
+  [0]=>
+  int(2)
 }
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(8) "property"
-    }
-  }
+  [0]=>
+  int(3)
 }
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(7) "closure"
-    }
-  }
+  [0]=>
+  int(3)
 }
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(13) "short closure"
-    }
-  }
+  [0]=>
+  int(4)
 }
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(10) "anon class"
-    }
-  }
+  [0]=>
+  int(5)
 }
-array(2) {
-  ["Attr"]=>
-  array(1) {
-    [0]=>
-    array(0) {
-    }
-  }
-  ["OtherAttr"]=>
-  array(1) {
-    [0]=>
-    array(0) {
-    }
-  }
-}
+string(2) "A1"
 array(1) {
-  ["Attr"]=>
-  array(2) {
-    [0]=>
-    array(1) {
-      [0]=>
-      string(3) "foo"
-    }
-    [1]=>
-    array(1) {
-      [0]=>
-      string(3) "bar"
-    }
-  }
+  [0]=>
+  int(6)
+}
+string(2) "A1"
+array(1) {
+  [0]=>
+  int(7)
+}
+string(2) "A1"
+array(1) {
+  [0]=>
+  int(8)
+}
+string(2) "A1"
+array(1) {
+  [0]=>
+  int(9)
+}
+string(2) "A1"
+array(1) {
+  [0]=>
+  int(10)
 }
