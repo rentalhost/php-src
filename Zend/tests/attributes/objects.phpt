@@ -99,4 +99,4 @@ string(7) "ERROR 4"
 string(50) "Attribute constructor of class 'A3' must be public"
 
 string(7) "ERROR 5"
-string(72) "Annotation class 'A4' does not have a constructor, cannot pass arguments"
+string(71) "Attribute class 'A4' does not have a constructor, cannot pass arguments"
