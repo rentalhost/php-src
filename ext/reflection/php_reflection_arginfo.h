@@ -59,7 +59,7 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionFunctionAbstract_getAttributes, 0, 0, 0)
 	ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 1)
-	ZEND_ARG_TYPE_INFO(0, inheritance, _IS_BOOL, 0)
+	ZEND_ARG_TYPE_INFO(0, flags, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_ReflectionFunction___construct, 0, 0, 1)

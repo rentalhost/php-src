@@ -111,6 +111,8 @@ PHPAPI zend_class_entry *reflection_attribute_ptr;
 #define REGISTER_REFLECTION_CLASS_CONST_LONG(class_name, const_name, value) \
 	zend_declare_class_constant_long(reflection_ ## class_name ## _ptr, const_name, sizeof(const_name)-1, (zend_long)value);
 
+#define REFLECTION_ATTRIBUTE_FILTER_INSTANCEOF (1 << 1)
+
 /* {{{ Object structure */
 
 /* Struct for properties */
@@ -1215,14 +1217,19 @@ static void reflect_attributes(INTERNAL_FUNCTION_PARAMETERS, HashTable *attribut
 	zval ret;
 
 	zend_string *name = NULL;
-	zend_bool inherited = 0;
+	zend_long flags = 0;
 	zend_class_entry *base = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|Sb", &name, &inherited) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|Sl", &name, &flags) == FAILURE) {
 		RETURN_THROWS();
 	}
 
-	if (name && inherited) {
+	if (flags & ~REFLECTION_ATTRIBUTE_FILTER_INSTANCEOF) {
+		zend_throw_error(NULL, "Invalid attribute filter flag specified");
+		RETURN_THROWS();
+	}
+
+	if (name && (flags & REFLECTION_ATTRIBUTE_FILTER_INSTANCEOF)) {
 		if (NULL == (base = zend_lookup_class(name))) {
 			if (!EG(exception)) {
 				zend_throw_error(NULL, "Class '%s' not found", ZSTR_VAL(name));
@@ -7137,6 +7144,8 @@ PHP_MINIT_FUNCTION(reflection) /* {{{ */
 	reflection_init_class_handlers(&_reflection_entry);
 	_reflection_entry.ce_flags |= ZEND_ACC_FINAL;
 	reflection_attribute_ptr = zend_register_internal_class(&_reflection_entry);
+
+	REGISTER_REFLECTION_CLASS_CONST_LONG(attribute, "FILTER_INSTANCEOF", REFLECTION_ATTRIBUTE_FILTER_INSTANCEOF);
 
 	REFLECTION_G(key_initialized) = 0;
 

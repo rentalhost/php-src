@@ -26,29 +26,47 @@ class A2 implements Base { }
 class A3 extends A2 { }
 
 $ref = new \ReflectionFunction(<<A1>> <<A2>> <<A5>> function () { });
-$attr = $ref->getAttributes(\stdClass::class, true);
+$attr = $ref->getAttributes(\stdClass::class, \ReflectionAttribute::FILTER_INSTANCEOF);
 var_dump(count($attr));
 print_r(array_map(fn ($a) => $a->getName(), $attr));
 
 $ref = new \ReflectionFunction(<<A1>> <<A2>> function () { });
-$attr = $ref->getAttributes(A1::class, true);
+$attr = $ref->getAttributes(A1::class, \ReflectionAttribute::FILTER_INSTANCEOF);
 var_dump(count($attr));
 print_r(array_map(fn ($a) => $a->getName(), $attr));
 
 $ref = new \ReflectionFunction(<<A1>> <<A2>> function () { });
-$attr = $ref->getAttributes(Base::class, true);
+$attr = $ref->getAttributes(Base::class, \ReflectionAttribute::FILTER_INSTANCEOF);
 var_dump(count($attr));
 print_r(array_map(fn ($a) => $a->getName(), $attr));
 
 $ref = new \ReflectionFunction(<<A1>> <<A2>> <<A3>> function () { });
-$attr = $ref->getAttributes(A2::class, true);
+$attr = $ref->getAttributes(A2::class, \ReflectionAttribute::FILTER_INSTANCEOF);
 var_dump(count($attr));
 print_r(array_map(fn ($a) => $a->getName(), $attr));
 
 $ref = new \ReflectionFunction(<<A1>> <<A2>> <<A3>> function () { });
-$attr = $ref->getAttributes(Base::class, true);
+$attr = $ref->getAttributes(Base::class, \ReflectionAttribute::FILTER_INSTANCEOF);
 var_dump(count($attr));
 print_r(array_map(fn ($a) => $a->getName(), $attr));
+
+echo "\n";
+
+$ref = new \ReflectionFunction(function () { });
+
+try {
+	$ref->getAttributes(A1::class, 3);
+} catch (\Error $e) {
+	var_dump('ERROR 1', $e->getMessage());
+}
+
+$ref = new \ReflectionFunction(function () { });
+
+try {
+	$ref->getAttributes(SomeMissingClass::class, \ReflectionAttribute::FILTER_INSTANCEOF);
+} catch (\Error $e) {
+	var_dump('ERROR 2', $e->getMessage());
+}
 
 ?>
 --EXPECT--
@@ -87,3 +105,8 @@ Array
     [1] => A2
     [2] => A3
 )
+
+string(7) "ERROR 1"
+string(39) "Invalid attribute filter flag specified"
+string(7) "ERROR 2"
+string(34) "Class 'SomeMissingClass' not found"

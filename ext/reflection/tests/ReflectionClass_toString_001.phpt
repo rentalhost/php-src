@@ -112,7 +112,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
 
       - Parameters [2] {
         Parameter #0 [ <optional> ?string $name ]
-        Parameter #1 [ <optional> bool $inheritance ]
+        Parameter #1 [ <optional> int $flags ]
       }
     }
 
