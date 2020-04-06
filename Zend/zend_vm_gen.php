@@ -1053,6 +1053,17 @@ function gen_handler($f, $spec, $kind, $name, $op1, $op2, $use, $code, $lineno, 
         }
     }
 
+    /* Skip QUICK_ARG specialization for named parameters */
+    if (isset($extra_spec["QUICK_ARG"])) {
+        if ($op2 === "CONST") {
+            if ($extra_spec["QUICK_ARG"] == 0) {
+                unset($extra_spec["QUICK_ARG"]);
+            } else {
+                return;
+            }
+        }
+    }
+
     if (ZEND_VM_LINES) {
         out($f, "#line $lineno \"$definition_file\"\n");
     }
@@ -1370,6 +1381,13 @@ function gen_labels($f, $spec, $kind, $prolog, &$specs, $switch_labels = array()
                             if (($op1 === 'CONST') && ($op2 === 'CONST')) {
                                 unset($extra_spec["SMART_BRANCH"]);
                             }
+                        }
+                    }
+
+                    /* Skip QUICK_ARG specialization for named parameters */
+                    if (isset($extra_spec["QUICK_ARG"])) {
+                        if ($op2 === "CONST") {
+                            unset($extra_spec["QUICK_ARG"]);
                         }
                     }
 

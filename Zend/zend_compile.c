@@ -3165,15 +3165,38 @@ void zend_compile_compound_assign(znode *result, zend_ast *ast) /* {{{ */
 }
 /* }}} */
 
+static uint32_t zend_get_arg_num(zend_function *fn, zend_string *arg_name) {
+	// TODO: Caching?
+	if (fn->type == ZEND_USER_FUNCTION) {
+		for (uint32_t i = 0; i < fn->common.num_args; i++) {
+			zend_arg_info *arg_info = &fn->op_array.arg_info[i];
+			if (zend_string_equals(arg_info->name, arg_name)) {
+				return i + 1;
+			}
+		}
+	} else {
+		for (uint32_t i = 0; i < fn->common.num_args; i++) {
+			zend_internal_arg_info *arg_info = &fn->internal_function.arg_info[i];
+			size_t len = strlen(arg_info->name);
+			if (len == ZSTR_LEN(arg_name) && !memcmp(arg_info->name, ZSTR_VAL(arg_name), len)) {
+				return i + 1;
+			}
+		}
+	}
+	return (uint32_t) -1;
+}
+
 uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 {
 	zend_ast_list *args = zend_ast_get_list(ast);
 	uint32_t i;
 	zend_bool uses_arg_unpack = 0;
+	zend_bool uses_named_args = 0;
 	uint32_t arg_count = 0; /* number of arguments not including unpacks */
 
 	for (i = 0; i < args->children; ++i) {
 		zend_ast *arg = args->child[i];
+		zend_string *arg_name = NULL;
 		uint32_t arg_num = i + 1;
 
 		znode arg_node;
@@ -3181,6 +3204,11 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 		zend_uchar opcode;
 
 		if (arg->kind == ZEND_AST_UNPACK) {
+			if (uses_named_args) {
+				zend_error_noreturn(E_COMPILE_ERROR,
+					"Cannot combine named arguments and argument unpacking");
+			}
+
 			uses_arg_unpack = 1;
 			fbc = NULL;
 
@@ -3191,19 +3219,47 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 			continue;
 		}
 
-		if (uses_arg_unpack) {
-			zend_error_noreturn(E_COMPILE_ERROR,
-				"Cannot use positional argument after argument unpacking");
+		if (arg->kind == ZEND_AST_NAMED_ARG) {
+			if (uses_arg_unpack) {
+				zend_error_noreturn(E_COMPILE_ERROR,
+					"Cannot combine named arguments and argument unpacking");
+			}
+
+			uses_named_args = 1;
+			arg_name = zval_make_interned_string(zend_ast_get_zval(arg->child[0]));
+			arg = arg->child[1];
+
+			if (fbc) {
+				arg_num = zend_get_arg_num(fbc, arg_name);
+				if (arg_num == arg_count + 1) {
+					/* Using named params, but passing in order. */
+					arg_name = NULL;
+					arg_count++;
+				}
+			} else {
+				arg_num = (uint32_t) -1;
+			}
+		} else {
+			if (uses_arg_unpack) {
+				zend_error_noreturn(E_COMPILE_ERROR,
+					"Cannot use positional argument after argument unpacking");
+			}
+
+			if (uses_named_args) {
+				zend_error_noreturn(E_COMPILE_ERROR,
+					"Cannot use positional argument after named argument");
+			}
+
+			arg_count++;
 		}
 
-		arg_count++;
 		if (zend_is_call(arg)) {
 			zend_compile_var(&arg_node, arg, BP_VAR_R, 0);
 			if (arg_node.op_type & (IS_CONST|IS_TMP_VAR)) {
 				/* Function call was converted into builtin instruction */
 				opcode = ZEND_SEND_VAL;
 			} else {
-				if (fbc) {
+				if (fbc && arg_num != (uint32_t) -1) {
 					if (ARG_MUST_BE_SENT_BY_REF(fbc, arg_num)) {
 						opcode = ZEND_SEND_VAR_NO_REF;
 					} else if (ARG_MAY_BE_SENT_BY_REF(fbc, arg_num)) {
@@ -3216,7 +3272,7 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 				}
 			}
 		} else if (zend_is_variable(arg)) {
-			if (fbc) {
+			if (fbc && arg_num != (uint32_t) -1) {
 				if (ARG_SHOULD_BE_SENT_BY_REF(fbc, arg_num)) {
 					zend_compile_var(&arg_node, arg, BP_VAR_W, 1);
 					opcode = ZEND_SEND_REF;
@@ -3239,7 +3295,13 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 						}
 					}
 					opline = zend_emit_op(NULL, ZEND_CHECK_FUNC_ARG, NULL, NULL);
-					opline->op2.num = arg_num;
+					if (arg_name) {
+						opline->op2_type = IS_CONST;
+						opline->op2.constant = zend_add_literal_string(&arg_name);
+						opline->result.num = zend_alloc_cache_slots(2);
+					} else {
+						opline->op2.num = arg_num;
+					}
 					zend_compile_var(&arg_node, arg, BP_VAR_FUNC_ARG, 1);
 					opcode = ZEND_SEND_FUNC_ARG;
 				} while (0);
@@ -3248,7 +3310,7 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 			zend_compile_expr(&arg_node, arg);
 			if (arg_node.op_type == IS_VAR) {
 				/* pass ++$a or something similar */
-				if (fbc) {
+				if (fbc && arg_num != (uint32_t) -1) {
 					if (ARG_MUST_BE_SENT_BY_REF(fbc, arg_num)) {
 						opcode = ZEND_SEND_VAR_NO_REF;
 					} else if (ARG_MAY_BE_SENT_BY_REF(fbc, arg_num)) {
@@ -3260,7 +3322,7 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 					opcode = ZEND_SEND_VAR_NO_REF_EX;
 				}
 			} else if (arg_node.op_type == IS_CV) {
-				if (fbc) {
+				if (fbc && arg_num != (uint32_t) -1) {
 					if (ARG_SHOULD_BE_SENT_BY_REF(fbc, arg_num)) {
 						opcode = ZEND_SEND_REF;
 					} else {
@@ -3271,7 +3333,7 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 				}
 			} else {
 				/* Delay "Only variables can be passed by reference" error to execution */
-				if (fbc && !ARG_MUST_BE_SENT_BY_REF(fbc, arg_num)) {
+				if (fbc && arg_num != (uint32_t) -1 && !ARG_MUST_BE_SENT_BY_REF(fbc, arg_num)) {
 					opcode = ZEND_SEND_VAL;
 				} else {
 					opcode = ZEND_SEND_VAL_EX;
@@ -3280,8 +3342,14 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 		}
 
 		opline = zend_emit_op(NULL, opcode, &arg_node, NULL);
-		opline->op2.opline_num = arg_num;
-		opline->result.var = EX_NUM_TO_VAR(arg_num - 1);
+		if (arg_name) {
+			opline->op2_type = IS_CONST;
+			opline->op2.constant = zend_add_literal_string(&arg_name);
+			opline->result.num = zend_alloc_cache_slots(2);
+		} else {
+			opline->op2.opline_num = arg_num;
+			opline->result.var = EX_NUM_TO_VAR(arg_num - 1);
+		}
 	}
 
 	return arg_count;

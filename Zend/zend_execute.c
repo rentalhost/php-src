@@ -3466,7 +3466,8 @@ static zend_always_inline void i_init_func_execute_data(zend_op_array *op_array,
 		if (!may_be_trampoline || EXPECTED(!(op_array->fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE))) {
 			zend_copy_extra_args(EXECUTE_DATA_C);
 		}
-	} else if (EXPECTED((op_array->fn_flags & ZEND_ACC_HAS_TYPE_HINTS) == 0)) {
+	} else if (EXPECTED((op_array->fn_flags & ZEND_ACC_HAS_TYPE_HINTS) == 0)
+			&& !(EX_CALL_INFO() & ZEND_CALL_MAY_HAVE_UNDEF)) {
 		/* Skip useless ZEND_RECV and ZEND_RECV_INIT opcodes */
 #if defined(ZEND_VM_IP_GLOBAL_REG) && ((ZEND_VM_KIND == ZEND_VM_KIND_CALL) || (ZEND_VM_KIND == ZEND_VM_KIND_HYBRID))
 		opline += num_args;
@@ -4275,6 +4276,84 @@ static zend_never_inline int ZEND_FASTCALL zend_quick_check_constant(
 {
 	return _zend_quick_get_constant(key, 0, 1 OPLINE_CC EXECUTE_DATA_CC);
 } /* }}} */
+
+static zend_always_inline uint32_t zend_get_arg_offset_by_name(
+		zend_function *fbc, zend_string *arg_name, void **cache_slot) {
+	if (EXPECTED(*cache_slot == fbc)) {
+		return *(uintptr_t *)(cache_slot + 1);
+	}
+
+	// TODO: Use a hash table?
+	uint32_t num_args = fbc->common.num_args;
+	if (fbc->type == ZEND_USER_FUNCTION) {
+		for (uint32_t i = 0; i < num_args; i++) {
+			zend_arg_info *arg_info = &fbc->op_array.arg_info[i];
+			if (zend_string_equals(arg_name, arg_info->name)) {
+				*cache_slot = fbc;
+				*(uintptr_t *)(cache_slot + 1) = i;
+				return i;
+			}
+		}
+	} else {
+		for (uint32_t i = 0; i < num_args; i++) {
+			zend_internal_arg_info *arg_info = &fbc->internal_function.arg_info[i];
+			size_t len = strlen(arg_info->name);
+			if (len == ZSTR_LEN(arg_name) && !memcmp(arg_info->name, ZSTR_VAL(arg_name), len)) {
+				*cache_slot = fbc;
+				*(uintptr_t *)(cache_slot + 1) = i;
+				return i;
+			}
+		}
+	}
+
+	return (uint32_t) -1;
+}
+
+static zval * ZEND_FASTCALL zend_handle_named_arg(
+		zend_execute_data **call_ptr, zend_string *arg_name,
+		uint32_t *arg_num_ptr, void **cache_slot) {
+	zend_execute_data *call = *call_ptr;
+	zend_function *fbc = call->func;
+	uint32_t arg_offset = zend_get_arg_offset_by_name(fbc, arg_name, cache_slot);
+	if (UNEXPECTED(arg_offset == (uint32_t) -1)) {
+		// TODO: Allow collection of non-existent named parameters.
+		zend_throw_error(NULL, "Unknown named parameter $%s", ZSTR_VAL(arg_name));
+		return NULL;
+	}
+
+	zval *arg;
+	uint32_t current_num_args = ZEND_CALL_NUM_ARGS(call);
+	// TODO: We may wish to optimize the arg_offset == current_num_args case,
+	// which is probably common (if the named parameters are in order of declaration).
+	if (arg_offset >= current_num_args) {
+		uint32_t new_num_args = arg_offset + 1;
+		ZEND_CALL_NUM_ARGS(call) = new_num_args;
+
+		uint32_t num_extra_args = new_num_args - current_num_args;
+		zend_vm_stack_extend_call_frame(call_ptr, current_num_args, num_extra_args);
+		call = *call_ptr;
+
+		arg = ZEND_CALL_VAR_NUM(call, arg_offset);
+		if (num_extra_args > 1) {
+			zval *zv = ZEND_CALL_VAR_NUM(call, current_num_args);
+			do {
+				ZVAL_UNDEF(zv);
+				zv++;
+			} while (zv != arg);
+			ZEND_ADD_CALL_FLAG(call, ZEND_CALL_MAY_HAVE_UNDEF);
+		}
+	} else {
+		arg = ZEND_CALL_VAR_NUM(call, arg_offset);
+		if (UNEXPECTED(!Z_ISUNDEF_P(arg))) {
+			zend_throw_error(NULL, "Named parameter $%s overwrites previous argument",
+				ZSTR_VAL(arg_name));
+			return NULL;
+		}
+	}
+
+	*arg_num_ptr = arg_offset + 1;
+	return arg;
+}
 
 #if defined(ZEND_VM_IP_GLOBAL_REG) && ((ZEND_VM_KIND == ZEND_VM_KIND_CALL) || (ZEND_VM_KIND == ZEND_VM_KIND_HYBRID))
 /* Special versions of functions that sets EX(opline) before calling zend_vm_stack_extend() */
