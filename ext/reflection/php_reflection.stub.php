@@ -94,7 +94,7 @@ abstract class ReflectionFunctionAbstract implements Reflector
     public function getReturnType() {}
 
     /** @return ReflectionAttribute[] */
-    public function getAttributes(?string $name = null) {}
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionFunction extends ReflectionFunctionAbstract
@@ -353,7 +353,7 @@ class ReflectionClass implements Reflector
     public function getShortName() {}
 
     /** @return ReflectionAttribute[] */
-    public function getAttributes(?string $name = null) {}
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionObject extends ReflectionClass
@@ -420,7 +420,7 @@ class ReflectionProperty implements Reflector
     public function getDefaultValue() {}
 
     /** @return ReflectionAttribute[] */
-    public function getAttributes(?string $name = null) {}
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionClassConstant implements Reflector
@@ -456,7 +456,7 @@ class ReflectionClassConstant implements Reflector
     public function getDocComment() {}
 
     /** @return ReflectionAttribute[] */
-    public function getAttributes(?string $name = null) {}
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionParameter implements Reflector
@@ -525,7 +525,7 @@ class ReflectionParameter implements Reflector
     public function isVariadic() {}
     
     /** @return ReflectionAttribute[] */
-    public function getAttributes(?string $name = null) {}
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 abstract class ReflectionType implements Stringable

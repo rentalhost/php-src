@@ -110,8 +110,9 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
 
     Method [ <internal:Reflection> public method getAttributes ] {
 
-      - Parameters [1] {
-        Parameter #0 [ <optional> $name ]
+      - Parameters [2] {
+        Parameter #0 [ <optional> ?string $name ]
+        Parameter #1 [ <optional> int $flags ]
       }
     }
 
