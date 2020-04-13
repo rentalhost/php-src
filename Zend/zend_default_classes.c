@@ -26,6 +26,28 @@
 #include "zend_generators.h"
 #include "zend_weakrefs.h"
 
+zend_class_entry *zend_ce_php_attribute;
+zend_class_entry *zend_ce_php_compiler_attribute;
+
+static void zend_register_attribute_ce(void)
+{
+	zend_class_entry ce;
+
+	INIT_CLASS_ENTRY(ce, "PhpAttribute", NULL);
+	zend_ce_php_attribute = zend_register_internal_class(&ce);
+	zend_ce_php_attribute->ce_flags |= ZEND_ACC_FINAL;
+
+	//zend_hash_init_ex(zend_ce_php_attribute->attributes, 8, NULL, NULL, 1, 0);
+	//zend_hash_str_add_empty_element(zend_ce_php_attribute->attributes, "phpattribute", sizeof("phpattribute")-1);
+
+	INIT_CLASS_ENTRY(ce, "PhpCompilerAttribute", NULL);
+	zend_ce_php_compiler_attribute = zend_register_internal_class(&ce);
+	zend_ce_php_compiler_attribute->ce_flags |= ZEND_ACC_FINAL;
+
+	//zend_hash_init_ex(zend_ce_php_attribute->attributes, 8, NULL, NULL, 1, 0);
+	//zend_hash_str_add_empty_element(zend_ce_php_attribute->attributes, "phpattribute", sizeof("phpattribute")-1);
+}
+
 ZEND_API void zend_register_default_classes(void)
 {
 	zend_register_interfaces();
@@ -34,4 +56,5 @@ ZEND_API void zend_register_default_classes(void)
 	zend_register_closure_ce();
 	zend_register_generator_ce();
 	zend_register_weakref_ce();
+	zend_register_attribute_ce();
 }
