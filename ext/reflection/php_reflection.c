@@ -32,6 +32,7 @@
 #include "zend.h"
 #include "zend_API.h"
 #include "zend_ast.h"
+#include "zend_attributes.h"
 #include "zend_exceptions.h"
 #include "zend_operators.h"
 #include "zend_constants.h"
@@ -6672,6 +6673,20 @@ ZEND_METHOD(reflection_attribute, getAsObject)
 	if (SUCCESS != object_init_ex(&obj, ce)) {
 		RETURN_THROWS();
 	}
+
+	zend_string *lower_name = zend_string_tolower_ex(ce->name, 1);
+
+	if (ce->type == ZEND_USER_CLASS && ce->info.user.attributes && zend_hash_str_exists(ce->info.user.attributes, "phpattribute", sizeof("phpattribute")-1) == 0) {
+		zend_string_release(lower_name);
+		zend_throw_error(NULL, "Attempting to use class '%s' as attribute that does not have <<PhpAttribute>>.", ZSTR_VAL(attr->name));
+		RETURN_THROWS();
+	} else if (ce->type == ZEND_INTERNAL_CLASS && zend_hash_exists(&zend_attributes_internal_validators, lower_name) == 0) {
+		zend_string_release(lower_name);
+		zend_throw_error(NULL, "Attempting to use internal class '%s' as attribute that does not have <<PhpCompilerAttribute>>.", ZSTR_VAL(attr->name));
+		RETURN_THROWS();
+	}
+
+	zend_string_release(lower_name);
 
 	count = zend_hash_num_elements(Z_ARRVAL(attr->arguments));
 
