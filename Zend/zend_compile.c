@@ -20,6 +20,7 @@
 
 #include <zend_language_parser.h>
 #include "zend.h"
+#include "zend_attributes.h"
 #include "zend_compile.h"
 #include "zend_constants.h"
 #include "zend_llist.h"
@@ -5750,6 +5751,8 @@ static HashTable *zend_compile_attributes(zend_ast *ast) /* {{{ */
 	uint32_t i;
 
 	zval tmp;
+	zend_attributes_internal_validator *validator = NULL;
+	zend_attributes_internal_validator cb;
 
 	ZVAL_NULL(&tmp);
 
@@ -5769,6 +5772,14 @@ static HashTable *zend_compile_attributes(zend_ast *ast) /* {{{ */
 
 		name = zend_string_tolower(Z_STR_P(zend_hash_index_find(Z_ARRVAL(a), 0)));
 		x = zend_hash_find(attr, name);
+
+		// validate internal attribute
+		validator = (zend_attributes_internal_validator*)zend_hash_find_ptr(&zend_attributes_internal_validators, name);
+
+		if (validator != NULL) {
+			cb = *validator;
+			cb(&a);
+		}
 
 		if (x) {
 			ZEND_ASSERT(Z_TYPE_P(x) == IS_ARRAY);

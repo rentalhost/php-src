@@ -11,5 +11,4 @@ class Foo
 $ref = new ReflectionClass(Foo::class);
 var_dump($ref->getAttributes()[0]->getAsObject());
 --EXPECTF--
-object(PhpCompilerAttribute)#3 (0) {
-}
+Fatal error: The PhpCompilerAttribute can only be used by internal classes, use PhpAttribute instead in %s
