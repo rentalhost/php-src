@@ -3,6 +3,7 @@ Attributes: RFC Example
 --FILE--
 <?php
 namespace My\Attributes {
+    use PhpAttribute;
 
     <<PhpAttribute>>
     class SingleArgument {
