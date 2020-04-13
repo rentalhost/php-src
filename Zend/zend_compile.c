@@ -5743,7 +5743,7 @@ static void zend_compile_attribute(zval *v, zend_ast *ast) /* {{{ */
 }
 /* }}} */
 
-static HashTable *zend_compile_attributes(zend_ast *ast) /* {{{ */
+static HashTable *zend_compile_attributes(zend_ast *ast, int target) /* {{{ */
 {
 	HashTable *attr;
 
@@ -5778,7 +5778,7 @@ static HashTable *zend_compile_attributes(zend_ast *ast) /* {{{ */
 
 		if (validator != NULL) {
 			cb = *validator;
-			cb(&a);
+			cb(&a, target);
 		}
 
 		if (x) {
@@ -5921,7 +5921,7 @@ void zend_compile_params(zend_ast *ast, zend_ast *return_type_ast, uint32_t fall
 				zend_hash_init(op_array->attributes, 8, NULL, ZVAL_PTR_DTOR, 0);
 			}
 
-			ZVAL_ARR(&attr, zend_compile_attributes(attributes_ast));
+			ZVAL_ARR(&attr, zend_compile_attributes(attributes_ast, ZEND_ATTRIBUTE_TARGET_PARAMETER));
 			zend_hash_index_add(op_array->attributes, i, &attr);
 		}
 
@@ -6381,7 +6381,11 @@ void zend_compile_func_decl(znode *result, zend_ast *ast, zend_bool toplevel) /*
 		op_array->doc_comment = zend_string_copy(decl->doc_comment);
 	}
 	if (decl->attributes) {
-		op_array->attributes = zend_compile_attributes(decl->attributes);
+		int target = ZEND_ATTRIBUTE_TARGET_FUNCTION;
+		if (is_method) {
+			target = ZEND_ATTRIBUTE_TARGET_METHOD;
+		}
+		op_array->attributes = zend_compile_attributes(decl->attributes, target);
 	}
 	if (decl->kind == ZEND_AST_CLOSURE || decl->kind == ZEND_AST_ARROW_FUNC) {
 		op_array->fn_flags |= ZEND_ACC_CLOSURE;
@@ -6555,7 +6559,7 @@ void zend_compile_prop_group(zend_ast *list) /* {{{ */
 	zend_ast *type_ast = list->child[0];
 	zend_ast *prop_ast = list->child[1];
 
-	attributes = list->child[2] ? zend_compile_attributes(list->child[2]) : NULL;
+	attributes = list->child[2] ? zend_compile_attributes(list->child[2], ZEND_ATTRIBUTE_TARGET_PROPERTY) : NULL;
 
 	zend_compile_prop_decl(prop_ast, type_ast, list->attr, attributes);
 
@@ -6589,7 +6593,7 @@ void zend_compile_class_const_decl(zend_ast *ast, zend_ast *attr_ast) /* {{{ */
 		return;
 	}
 
-	attributes = attr_ast ? zend_compile_attributes(attr_ast) : NULL;
+	attributes = attr_ast ? zend_compile_attributes(attr_ast, ZEND_ATTRIBUTE_TARGET_CLASS_CONST) : NULL;
 
 	for (i = 0; i < list->children; ++i) {
 		zend_ast *const_ast = list->child[i];
@@ -6820,7 +6824,7 @@ zend_op *zend_compile_class_decl(zend_ast *ast, zend_bool toplevel) /* {{{ */
 		ce->info.user.doc_comment = zend_string_copy(decl->doc_comment);
 	}
 	if (decl->attributes) {
-		ce->info.user.attributes = zend_compile_attributes(decl->attributes);
+		ce->info.user.attributes = zend_compile_attributes(decl->attributes, ZEND_ATTRIBUTE_TARGET_CLASS);
 	}
 
 	if (UNEXPECTED((decl->flags & ZEND_ACC_ANON_CLASS))) {
