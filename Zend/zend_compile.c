@@ -5751,8 +5751,7 @@ static HashTable *zend_compile_attributes(zend_ast *ast, int target) /* {{{ */
 	uint32_t i;
 
 	zval tmp;
-	zend_attributes_internal_validator *validator = NULL;
-	zend_attributes_internal_validator cb;
+	zend_attributes_internal_validator validator = NULL;
 
 	ZVAL_NULL(&tmp);
 
@@ -5774,11 +5773,10 @@ static HashTable *zend_compile_attributes(zend_ast *ast, int target) /* {{{ */
 		x = zend_hash_find(attr, name);
 
 		// validate internal attribute
-		validator = (zend_attributes_internal_validator*)zend_hash_find_ptr(&zend_attributes_internal_validators, name);
+		validator = (zend_attributes_internal_validator)zend_hash_find_ptr(&zend_attributes_internal_validators, name);
 
 		if (validator != NULL) {
-			cb = *validator;
-			cb(&a, target);
+			validator(&a, target);
 		}
 
 		if (x) {
