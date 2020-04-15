@@ -19,7 +19,7 @@ class mysqli
     public function autocommit(bool $mode);
 
     /** @return bool */
-    public function begin_transaction(int $flags = -1, string $name = UNKNOWN);
+    public function begin_transaction(int $flags = 0, string $name = UNKNOWN);
 
     /** @return bool */
     public function change_user(string $user, string $password, ?string $database);
@@ -171,14 +171,6 @@ class mysqli
     public function refresh(int $options);
 }
 
-class mysqli_warning
-{
-    public function __construct(object $mysqli_link);
-
-    /** @return bool */
-    public function next();
-}
-
 class mysqli_result
 {
      public function __construct(object $mysqli_link, int $resmode = MYSQLI_STORE_RESULT);
@@ -211,7 +203,7 @@ class mysqli_result
     public function fetch_assoc();
 
     /** @return object|null */
-    public function fetch_object(string $class_name = 'stdClass', array $params = []);
+    public function fetch_object(string $class_name = UNKNOWN, array $params = []);
 
     /** @return array|null */
     public function fetch_row();
@@ -292,7 +284,7 @@ function mysqli_affected_rows(mysqli $mysql_link): int|string {}
 
 function mysqli_autocommit(mysqli $mysql_link, bool $mode): bool {}
 
-function mysqli_begin_transaction(mysqli $mysql_link, int $flags = -1, string $name = UNKNOWN): bool {}
+function mysqli_begin_transaction(mysqli $mysql_link, int $flags = 0, string $name = UNKNOWN): bool {}
 
 function mysqli_change_user(mysqli $mysql_link, string $user, string $password, ?string $database): bool {}
 
@@ -329,6 +321,7 @@ function mysqli_error_list(mysqli $mysql_link): array {}
 
 function mysqli_stmt_execute(mysqli_stmt $mysql_stmt): bool {}
 
+/** @alias mysqli_stmt_execute */
 function mysqli_execute(mysqli_stmt $mysql_stmt): bool {}
 
 function mysqli_fetch_field(mysqli_result $mysql_result): object|false {}
@@ -347,7 +340,7 @@ function mysqli_fetch_assoc(mysqli_result $mysql_result): ?array {}
 
 function mysqli_fetch_object(
     mysqli_result $mysqli_result,
-    string $class_name = 'stdClass',
+    string $class_name = UNKNOWN,
     array $params = []
 ): ?object {}
 
@@ -367,7 +360,7 @@ function mysqli_get_client_stats(): array {}
 
 function mysqli_get_charset(mysqli $mysqli_link): ?object {}
 
-function mysqli_get_client_info(?mysqli $mysqli_link = null): ?string {}
+function mysqli_get_client_info(mysqli $mysqli_link = UNKNOWN): ?string {}
 
 function mysqli_get_client_version(): int {}
 
@@ -421,6 +414,7 @@ function mysqli_real_connect(
     ?string $password = null,
     ?string $database = null,
     ?int $port = null,
+    ?string $socket = null,
     int $flags = 0
 ): bool {}
 
@@ -521,7 +515,11 @@ function mysqli_warning_count(mysqli $mysql_link): int {}
 
 function mysqli_refresh(mysqli $mysqli_link, int $options): bool {}
 
+/** @alias mysqli_real_escape_string */
 function mysqli_escape_string(mysqli $mysqli_link, string $string_to_escape): string {}
 
-/** @param mixed $value */
+/**
+ * @param mixed $value
+ * @alias mysqli_options
+ */
 function mysqli_set_opt(mysqli $mysqli_link, int $option, $value): bool {}

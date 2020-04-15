@@ -23,7 +23,7 @@
 #include "php_string.h"
 #include "php_scandir.h"
 #include "basic_functions.h"
-#include "basic_functions_arginfo.h"
+#include "dir_arginfo.h"
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -87,13 +87,6 @@ static zend_class_entry *dir_class_entry_ptr;
 		} \
 	}
 
-static const zend_function_entry php_dir_class_functions[] = {
-	PHP_FALIAS(close,	closedir,		arginfo_class_Directory_close)
-	PHP_FALIAS(rewind,	rewinddir,		arginfo_class_Directory_rewind)
-	PHP_FALIAS(read,	readdir,		arginfo_class_Directory_read)
-	PHP_FE_END
-};
-
 
 static void php_set_default_dir(zend_resource *res)
 {
@@ -119,7 +112,7 @@ PHP_MINIT_FUNCTION(dir)
 	static char dirsep_str[2], pathsep_str[2];
 	zend_class_entry dir_class_entry;
 
-	INIT_CLASS_ENTRY(dir_class_entry, "Directory", php_dir_class_functions);
+	INIT_CLASS_ENTRY(dir_class_entry, "Directory", class_Directory_methods);
 	dir_class_entry_ptr = zend_register_internal_class(&dir_class_entry);
 
 #ifdef ZTS
@@ -261,7 +254,7 @@ PHP_FUNCTION(closedir)
 	FETCH_DIRP();
 
 	if (!(dirp->flags & PHP_STREAM_FLAG_IS_DIR)) {
-		zend_type_error("%d is not a valid Directory resource", dirp->res->handle);
+		zend_argument_type_error(1, "must be a valid Directory resource");
 		RETURN_THROWS();
 	}
 
@@ -375,7 +368,7 @@ PHP_FUNCTION(rewinddir)
 	FETCH_DIRP();
 
 	if (!(dirp->flags & PHP_STREAM_FLAG_IS_DIR)) {
-		zend_type_error("%d is not a valid Directory resource", dirp->res->handle);
+		zend_argument_type_error(1, "must be a valid Directory resource");
 		RETURN_THROWS();
 	}
 
@@ -559,7 +552,7 @@ PHP_FUNCTION(scandir)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (dirn_len < 1) {
-		zend_value_error("Directory name cannot be empty");
+		zend_argument_value_error(1, "cannot be empty");
 		RETURN_THROWS();
 	}
 

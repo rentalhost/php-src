@@ -11,16 +11,19 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_IntlIterator_valid arginfo_class_IntlIterator_current
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_intl_get_error_code, 0, 0, IS_LONG, 0)
-ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_intl_get_error_message, 0, 0, IS_STRING, 0)
-ZEND_END_ARG_INFO()
+ZEND_METHOD(IntlIterator, current);
+ZEND_METHOD(IntlIterator, key);
+ZEND_METHOD(IntlIterator, next);
+ZEND_METHOD(IntlIterator, rewind);
+ZEND_METHOD(IntlIterator, valid);
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_intl_is_failure, 0, 1, _IS_BOOL, 0)
-	ZEND_ARG_TYPE_INFO(0, error_code, IS_LONG, 0)
-ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_intl_error_name, 0, 1, IS_STRING, 0)
-	ZEND_ARG_TYPE_INFO(0, error_code, IS_LONG, 0)
-ZEND_END_ARG_INFO()
+static const zend_function_entry class_IntlIterator_methods[] = {
+	ZEND_ME(IntlIterator, current, arginfo_class_IntlIterator_current, ZEND_ACC_PUBLIC)
+	ZEND_ME(IntlIterator, key, arginfo_class_IntlIterator_key, ZEND_ACC_PUBLIC)
+	ZEND_ME(IntlIterator, next, arginfo_class_IntlIterator_next, ZEND_ACC_PUBLIC)
+	ZEND_ME(IntlIterator, rewind, arginfo_class_IntlIterator_rewind, ZEND_ACC_PUBLIC)
+	ZEND_ME(IntlIterator, valid, arginfo_class_IntlIterator_valid, ZEND_ACC_PUBLIC)
+	ZEND_FE_END
+};

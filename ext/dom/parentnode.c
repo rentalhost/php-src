@@ -23,16 +23,6 @@
 #include "php.h"
 #if HAVE_LIBXML && HAVE_DOM
 #include "php_dom.h"
-#include "dom_arginfo.h"
-
-
-/* {{{ DOMParentNode methods */
-const zend_function_entry php_dom_parent_node_class_functions[] = { /* {{{ */
-	PHP_ABSTRACT_ME(DOMParentNode, append, arginfo_class_DOMParentNode_append)
-	PHP_ABSTRACT_ME(DOMParentNode, prepend, arginfo_class_DOMParentNode_prepend)
-	PHP_FE_END
-};
-/* }}} */
 
 /* {{{ firstElementChild DomParentNode
 readonly=yes
@@ -197,7 +187,7 @@ xmlNode* dom_zvals_to_fragment(php_libxml_ref_obj *document, xmlNode *contextNod
 			} else {
 				xmlFree(fragment);
 
-				zend_type_error("Invalid argument type must be either DOMNode or string");
+				zend_argument_type_error(i + 1, "must be of type DOMNode|string, %s given", zend_zval_type_name(&nodes[i]));
 				return NULL;
 			}
 		} else if (Z_TYPE(nodes[i]) == IS_STRING) {
@@ -213,7 +203,7 @@ xmlNode* dom_zvals_to_fragment(php_libxml_ref_obj *document, xmlNode *contextNod
 		} else {
 			xmlFree(fragment);
 
-			zend_type_error("Invalid argument type must be either DOMNode or string");
+			zend_argument_type_error(i + 1, "must be of type DOMNode|string, %s given", zend_zval_type_name(&nodes[i]));
 
 			return NULL;
 		}

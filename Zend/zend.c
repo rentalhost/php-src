@@ -81,6 +81,7 @@ ZEND_API char *(*zend_getenv)(char *name, size_t name_len);
 ZEND_API zend_string *(*zend_resolve_path)(const char *filename, size_t filename_len);
 ZEND_API int (*zend_post_startup_cb)(void) = NULL;
 ZEND_API void (*zend_post_shutdown_cb)(void) = NULL;
+ZEND_API int (*zend_preload_autoload)(zend_string *filename) = NULL;
 
 void (*zend_on_timeout)(int seconds);
 
@@ -819,7 +820,7 @@ int zend_startup(zend_utility_functions *utility_functions) /* {{{ */
 	/* Set up utility functions and values */
 	zend_error_cb = utility_functions->error_function;
 	zend_printf = utility_functions->printf_function;
-	zend_write = (zend_write_func_t) utility_functions->write_function;
+	zend_write = utility_functions->write_function;
 	zend_fopen = utility_functions->fopen_function;
 	if (!zend_fopen) {
 		zend_fopen = zend_fopen_wrapper;

@@ -206,7 +206,7 @@ typedef struct _zend_utility_values {
 	zend_bool html_errors;
 } zend_utility_values;
 
-typedef int (*zend_write_func_t)(const char *str, size_t str_length);
+typedef size_t (*zend_write_func_t)(const char *str, size_t str_length);
 
 #define zend_bailout()		_zend_bailout(__FILE__, __LINE__)
 
@@ -292,6 +292,9 @@ extern ZEND_API zend_string *(*zend_resolve_path)(const char *filename, size_t f
 /* These two callbacks are especially for opcache */
 extern ZEND_API int (*zend_post_startup_cb)(void);
 extern ZEND_API void (*zend_post_shutdown_cb)(void);
+
+/* Callback for loading of not preloaded part of the script */
+extern ZEND_API int (*zend_preload_autoload)(zend_string *filename);
 
 ZEND_API ZEND_COLD void zend_error(int type, const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 2, 3);
 ZEND_API ZEND_COLD ZEND_NORETURN void zend_error_noreturn(int type, const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 2, 3);

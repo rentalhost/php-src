@@ -1666,7 +1666,7 @@ PHPAPI void session_adapt_url(const char *url, size_t urllen, char **new, size_t
 /* {{{ proto bool session_set_cookie_params(int lifetime [, string path [, string domain [, bool secure[, bool httponly]]]])
                   session_set_cookie_params(array options)
    Set session cookie parameters */
-static PHP_FUNCTION(session_set_cookie_params)
+PHP_FUNCTION(session_set_cookie_params)
 {
 	zval *lifetime_or_options = NULL;
 	zend_string *lifetime = NULL, *path = NULL, *domain = NULL, *samesite = NULL;
@@ -1825,7 +1825,7 @@ cleanup:
 
 /* {{{ proto array session_get_cookie_params(void)
    Return the session cookie parameters */
-static PHP_FUNCTION(session_get_cookie_params)
+PHP_FUNCTION(session_get_cookie_params)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -1844,7 +1844,7 @@ static PHP_FUNCTION(session_get_cookie_params)
 
 /* {{{ proto string session_name([string newname])
    Return the current session name. If newname is given, the session name is replaced with newname */
-static PHP_FUNCTION(session_name)
+PHP_FUNCTION(session_name)
 {
 	zend_string *name = NULL;
 	zend_string *ini_name;
@@ -1875,7 +1875,7 @@ static PHP_FUNCTION(session_name)
 
 /* {{{ proto string session_module_name([string newname])
    Return the current module name used for accessing session data. If newname is given, the module name is replaced with newname */
-static PHP_FUNCTION(session_module_name)
+PHP_FUNCTION(session_module_name)
 {
 	zend_string *name = NULL;
 	zend_string *ini_name;
@@ -1922,7 +1922,7 @@ static PHP_FUNCTION(session_module_name)
 
 /* {{{ proto bool session_set_save_handler(string open, string close, string read, string write, string destroy, string gc, string create_sid)
    Sets user-level functions */
-static PHP_FUNCTION(session_set_save_handler)
+PHP_FUNCTION(session_set_save_handler)
 {
 	zval *args = NULL;
 	int i, num_args, argc = ZEND_NUM_ARGS();
@@ -2086,7 +2086,7 @@ static PHP_FUNCTION(session_set_save_handler)
 
 /* {{{ proto string session_save_path([string newname])
    Return the current save path passed to module_name. If newname is given, the save path is replaced with newname */
-static PHP_FUNCTION(session_save_path)
+PHP_FUNCTION(session_save_path)
 {
 	zend_string *name = NULL;
 	zend_string *ini_name;
@@ -2122,7 +2122,7 @@ static PHP_FUNCTION(session_save_path)
 
 /* {{{ proto string session_id([string newid])
    Return the current session id. If newid is given, the session id is replaced with newid */
-static PHP_FUNCTION(session_id)
+PHP_FUNCTION(session_id)
 {
 	zend_string *name = NULL;
 	int argc = ZEND_NUM_ARGS();
@@ -2165,7 +2165,7 @@ static PHP_FUNCTION(session_id)
 
 /* {{{ proto bool session_regenerate_id([bool delete_old_session])
    Update the current session id with a newly generated one. If delete_old_session is set to true, remove the old session. */
-static PHP_FUNCTION(session_regenerate_id)
+PHP_FUNCTION(session_regenerate_id)
 {
 	zend_bool del_ses = 0;
 	zend_string *data;
@@ -2231,7 +2231,7 @@ static PHP_FUNCTION(session_regenerate_id)
 		RETURN_THROWS();
 	}
 	if (PS(use_strict_mode) && PS(mod)->s_validate_sid &&
-		PS(mod)->s_validate_sid(&PS(mod_data), PS(id)) == FAILURE) {
+		PS(mod)->s_validate_sid(&PS(mod_data), PS(id)) == SUCCESS) {
 		zend_string_release_ex(PS(id), 0);
 		PS(id) = PS(mod)->s_create_sid(&PS(mod_data));
 		if (!PS(id)) {
@@ -2266,7 +2266,7 @@ static PHP_FUNCTION(session_regenerate_id)
 /* {{{ proto string session_create_id([string prefix])
    Generate new session ID. Intended for user save handlers. */
 /* This is not used yet */
-static PHP_FUNCTION(session_create_id)
+PHP_FUNCTION(session_create_id)
 {
 	zend_string *prefix = NULL, *new_id;
 	smart_str id = {0};
@@ -2293,7 +2293,7 @@ static PHP_FUNCTION(session_create_id)
 				break;
 			} else {
 				/* Detect collision and retry */
-				if (PS(mod)->s_validate_sid(&PS(mod_data), new_id) == FAILURE) {
+				if (PS(mod)->s_validate_sid(&PS(mod_data), new_id) == SUCCESS) {
 					zend_string_release_ex(new_id, 0);
                     new_id = NULL;
 					continue;
@@ -2320,7 +2320,7 @@ static PHP_FUNCTION(session_create_id)
 
 /* {{{ proto string session_cache_limiter([string new_cache_limiter])
    Return the current cache limiter. If new_cache_limited is given, the current cache_limiter is replaced with new_cache_limiter */
-static PHP_FUNCTION(session_cache_limiter)
+PHP_FUNCTION(session_cache_limiter)
 {
 	zend_string *limiter = NULL;
 	zend_string *ini_name;
@@ -2351,7 +2351,7 @@ static PHP_FUNCTION(session_cache_limiter)
 
 /* {{{ proto int session_cache_expire([int new_cache_expire])
    Return the current cache expire. If new_cache_expire is given, the current cache_expire is replaced with new_cache_expire */
-static PHP_FUNCTION(session_cache_expire)
+PHP_FUNCTION(session_cache_expire)
 {
 	zend_long expires;
 	zend_bool expires_is_null = 1;
@@ -2384,7 +2384,7 @@ static PHP_FUNCTION(session_cache_expire)
 
 /* {{{ proto string session_encode(void)
    Serializes the current setup and returns the serialized representation */
-static PHP_FUNCTION(session_encode)
+PHP_FUNCTION(session_encode)
 {
 	zend_string *enc;
 
@@ -2403,7 +2403,7 @@ static PHP_FUNCTION(session_encode)
 
 /* {{{ proto bool session_decode(string data)
    Deserializes data and reinitializes the variables */
-static PHP_FUNCTION(session_decode)
+PHP_FUNCTION(session_decode)
 {
 	zend_string *str = NULL;
 
@@ -2437,7 +2437,7 @@ static int php_session_start_set_ini(zend_string *varname, zend_string *new_valu
 
 /* {{{ proto bool session_start([array options])
 +   Begin session */
-static PHP_FUNCTION(session_start)
+PHP_FUNCTION(session_start)
 {
 	zval *options = NULL;
 	zval *value;
@@ -2515,7 +2515,7 @@ static PHP_FUNCTION(session_start)
 
 /* {{{ proto bool session_destroy(void)
    Destroy the current session and all data associated with it */
-static PHP_FUNCTION(session_destroy)
+PHP_FUNCTION(session_destroy)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -2527,7 +2527,7 @@ static PHP_FUNCTION(session_destroy)
 
 /* {{{ proto bool session_unset(void)
    Unset all registered variables */
-static PHP_FUNCTION(session_unset)
+PHP_FUNCTION(session_unset)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -2550,7 +2550,7 @@ static PHP_FUNCTION(session_unset)
 
 /* {{{ proto int session_gc(void)
    Perform GC and return number of deleted sessions */
-static PHP_FUNCTION(session_gc)
+PHP_FUNCTION(session_gc)
 {
 	zend_long num;
 
@@ -2575,7 +2575,7 @@ static PHP_FUNCTION(session_gc)
 
 /* {{{ proto bool session_write_close(void)
    Write session data and end session */
-static PHP_FUNCTION(session_write_close)
+PHP_FUNCTION(session_write_close)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -2591,7 +2591,7 @@ static PHP_FUNCTION(session_write_close)
 
 /* {{{ proto bool session_abort(void)
    Abort session and end session. Session data will not be written */
-static PHP_FUNCTION(session_abort)
+PHP_FUNCTION(session_abort)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -2607,7 +2607,7 @@ static PHP_FUNCTION(session_abort)
 
 /* {{{ proto bool session_reset(void)
    Reset session data from saved session data */
-static PHP_FUNCTION(session_reset)
+PHP_FUNCTION(session_reset)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -2623,7 +2623,7 @@ static PHP_FUNCTION(session_reset)
 
 /* {{{ proto int session_status(void)
    Returns the current session status */
-static PHP_FUNCTION(session_status)
+PHP_FUNCTION(session_status)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -2635,7 +2635,7 @@ static PHP_FUNCTION(session_status)
 
 /* {{{ proto void session_register_shutdown(void)
    Registers session_write_close() as a shutdown function */
-static PHP_FUNCTION(session_register_shutdown)
+PHP_FUNCTION(session_register_shutdown)
 {
 	php_shutdown_function_entry shutdown_function_entry;
 
@@ -2667,80 +2667,6 @@ static PHP_FUNCTION(session_register_shutdown)
 		php_error_docref(NULL, E_WARNING, "Unable to register session flush function");
 	}
 }
-/* }}} */
-
-/* {{{ session_functions[]
- */
-static const zend_function_entry session_functions[] = {
-	PHP_FE(session_name,              arginfo_session_name)
-	PHP_FE(session_module_name,       arginfo_session_module_name)
-	PHP_FE(session_save_path,         arginfo_session_save_path)
-	PHP_FE(session_id,                arginfo_session_id)
-	PHP_FE(session_create_id,         arginfo_session_create_id)
-	PHP_FE(session_regenerate_id,     arginfo_session_regenerate_id)
-	PHP_FE(session_decode,            arginfo_session_decode)
-	PHP_FE(session_encode,            arginfo_session_encode)
-	PHP_FE(session_start,             arginfo_session_start)
-	PHP_FE(session_destroy,           arginfo_session_destroy)
-	PHP_FE(session_unset,             arginfo_session_unset)
-	PHP_FE(session_gc,                arginfo_session_gc)
-	PHP_FE(session_set_save_handler,  arginfo_session_set_save_handler)
-	PHP_FE(session_cache_limiter,     arginfo_session_cache_limiter)
-	PHP_FE(session_cache_expire,      arginfo_session_cache_expire)
-	PHP_FE(session_set_cookie_params, arginfo_session_set_cookie_params)
-	PHP_FE(session_get_cookie_params, arginfo_session_get_cookie_params)
-	PHP_FE(session_write_close,       arginfo_session_write_close)
-	PHP_FE(session_abort,             arginfo_session_abort)
-	PHP_FE(session_reset,             arginfo_session_reset)
-	PHP_FE(session_status,            arginfo_session_status)
-	PHP_FE(session_register_shutdown, arginfo_session_register_shutdown)
-	PHP_FALIAS(session_commit, session_write_close, arginfo_session_commit)
-	PHP_FE_END
-};
-/* }}} */
-
-/* {{{ SessionHandlerInterface functions[]
-*/
-static const zend_function_entry php_session_iface_functions[] = {
-	PHP_ABSTRACT_ME(SessionHandlerInterface, open, arginfo_class_SessionHandlerInterface_open)
-	PHP_ABSTRACT_ME(SessionHandlerInterface, close, arginfo_class_SessionHandlerInterface_close)
-	PHP_ABSTRACT_ME(SessionHandlerInterface, read, arginfo_class_SessionHandlerInterface_read)
-	PHP_ABSTRACT_ME(SessionHandlerInterface, write, arginfo_class_SessionHandlerInterface_write)
-	PHP_ABSTRACT_ME(SessionHandlerInterface, destroy, arginfo_class_SessionHandlerInterface_destroy)
-	PHP_ABSTRACT_ME(SessionHandlerInterface, gc, arginfo_class_SessionHandlerInterface_gc)
-	PHP_FE_END
-};
-/* }}} */
-
-/* {{{ SessionIdInterface functions[]
-*/
-static const zend_function_entry php_session_id_iface_functions[] = {
-	PHP_ABSTRACT_ME(SessionIdInterface, create_sid, arginfo_class_SessionIdInterface_create_sid)
-	PHP_FE_END
-};
-/* }}} */
-
-/* {{{ SessionUpdateTimestampHandler functions[]
- */
-static const zend_function_entry php_session_update_timestamp_iface_functions[] = {
-	PHP_ABSTRACT_ME(SessionUpdateTimestampHandlerInterface, validateId, arginfo_class_SessionUpdateTimestampHandlerInterface_validateId)
-	PHP_ABSTRACT_ME(SessionUpdateTimestampHandlerInterface, updateTimestamp, arginfo_class_SessionUpdateTimestampHandlerInterface_updateTimestamp)
-	PHP_FE_END
-};
-/* }}} */
-
-/* {{{ SessionHandler functions[]
- */
-static const zend_function_entry php_session_class_functions[] = {
-	PHP_ME(SessionHandler, open, arginfo_class_SessionHandlerInterface_open, ZEND_ACC_PUBLIC)
-	PHP_ME(SessionHandler, close, arginfo_class_SessionHandlerInterface_close, ZEND_ACC_PUBLIC)
-	PHP_ME(SessionHandler, read, arginfo_class_SessionHandlerInterface_read, ZEND_ACC_PUBLIC)
-	PHP_ME(SessionHandler, write, arginfo_class_SessionHandlerInterface_write, ZEND_ACC_PUBLIC)
-	PHP_ME(SessionHandler, destroy, arginfo_class_SessionHandlerInterface_destroy, ZEND_ACC_PUBLIC)
-	PHP_ME(SessionHandler, gc, arginfo_class_SessionHandlerInterface_gc, ZEND_ACC_PUBLIC)
-	PHP_ME(SessionHandler, create_sid, arginfo_class_SessionIdInterface_create_sid, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
 /* }}} */
 
 /* ********************************
@@ -2857,20 +2783,20 @@ static PHP_MINIT_FUNCTION(session) /* {{{ */
 	php_rfc1867_callback = php_session_rfc1867_callback;
 
 	/* Register interfaces */
-	INIT_CLASS_ENTRY(ce, PS_IFACE_NAME, php_session_iface_functions);
+	INIT_CLASS_ENTRY(ce, PS_IFACE_NAME, class_SessionHandlerInterface_methods);
 	php_session_iface_entry = zend_register_internal_class(&ce);
 	php_session_iface_entry->ce_flags |= ZEND_ACC_INTERFACE;
 
-	INIT_CLASS_ENTRY(ce, PS_SID_IFACE_NAME, php_session_id_iface_functions);
+	INIT_CLASS_ENTRY(ce, PS_SID_IFACE_NAME, class_SessionIdInterface_methods);
 	php_session_id_iface_entry = zend_register_internal_class(&ce);
 	php_session_id_iface_entry->ce_flags |= ZEND_ACC_INTERFACE;
 
-	INIT_CLASS_ENTRY(ce, PS_UPDATE_TIMESTAMP_IFACE_NAME, php_session_update_timestamp_iface_functions);
+	INIT_CLASS_ENTRY(ce, PS_UPDATE_TIMESTAMP_IFACE_NAME, class_SessionUpdateTimestampHandlerInterface_methods);
 	php_session_update_timestamp_iface_entry = zend_register_internal_class(&ce);
 	php_session_update_timestamp_iface_entry->ce_flags |= ZEND_ACC_INTERFACE;
 
 	/* Register base class */
-	INIT_CLASS_ENTRY(ce, PS_CLASS_NAME, php_session_class_functions);
+	INIT_CLASS_ENTRY(ce, PS_CLASS_NAME, class_SessionHandler_methods);
 	php_session_class_entry = zend_register_internal_class(&ce);
 	zend_class_implements(php_session_class_entry, 1, php_session_iface_entry);
 	zend_class_implements(php_session_class_entry, 1, php_session_id_iface_entry);
@@ -3251,7 +3177,7 @@ zend_module_entry session_module_entry = {
 	NULL,
 	session_deps,
 	"session",
-	session_functions,
+	ext_functions,
 	PHP_MINIT(session), PHP_MSHUTDOWN(session),
 	PHP_RINIT(session), PHP_RSHUTDOWN(session),
 	PHP_MINFO(session),

@@ -32,7 +32,7 @@
 #include "zend_object_handlers.h"
 #include "zend_hash.h"
 #include "zend_interfaces.h"
-#include "pdo_arginfo.h"
+#include "pdo_dbh_arginfo.h"
 
 static int pdo_dbh_attribute_set(pdo_dbh_t *dbh, zend_long attr, zval *value);
 
@@ -190,9 +190,8 @@ static char *dsn_from_uri(char *uri, char *buf, size_t buflen) /* {{{ */
 }
 /* }}} */
 
-/* {{{ proto PDO::__construct(string dsn[, string username[, string passwd [, array options]]])
-   */
-static PHP_METHOD(PDO, dbh_constructor)
+/* {{{ proto PDO::__construct(string dsn[, string username[, string passwd [, array options]]]) */
+PHP_METHOD(PDO, __construct)
 {
 	zval *object = ZEND_THIS;
 	pdo_dbh_t *dbh = NULL;
@@ -225,7 +224,7 @@ static PHP_METHOD(PDO, dbh_constructor)
 
 		snprintf(alt_dsn, sizeof(alt_dsn), "pdo.dsn.%s", data_source);
 		if (FAILURE == cfg_get_string(alt_dsn, &ini_dsn)) {
-			zend_throw_exception_ex(php_pdo_get_exception(), 0, "invalid data source name");
+			zend_argument_error(php_pdo_get_exception(), 1, "must be a valid data source name");
 			RETURN_THROWS();
 		}
 
@@ -242,12 +241,12 @@ static PHP_METHOD(PDO, dbh_constructor)
 		/* the specified URI holds connection details */
 		data_source = dsn_from_uri(data_source + sizeof("uri:")-1, alt_dsn, sizeof(alt_dsn));
 		if (!data_source) {
-			zend_throw_exception_ex(php_pdo_get_exception(), 0, "invalid data source URI");
+			zend_argument_error(php_pdo_get_exception(), 1, "must be a valid data source URI");
 			RETURN_THROWS();
 		}
 		colon = strchr(data_source, ':');
 		if (!colon) {
-			zend_throw_exception_ex(php_pdo_get_exception(), 0, "invalid data source name (via URI)");
+			zend_argument_error(php_pdo_get_exception(), 1, "must be a valid data source name (via URI)");
 			RETURN_THROWS();
 		}
 	}
@@ -456,7 +455,7 @@ static void pdo_stmt_construct(zend_execute_data *execute_data, pdo_stmt_t *stmt
 
 /* {{{ proto object PDO::prepare(string statement [, array options])
    Prepares a statement for execution and returns a statement object */
-static PHP_METHOD(PDO, prepare)
+PHP_METHOD(PDO, prepare)
 {
 	pdo_stmt_t *stmt;
 	char *statement;
@@ -556,7 +555,7 @@ static PHP_METHOD(PDO, prepare)
 
 /* {{{ proto bool PDO::beginTransaction()
    Initiates a transaction */
-static PHP_METHOD(PDO, beginTransaction)
+PHP_METHOD(PDO, beginTransaction)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 
@@ -588,7 +587,7 @@ static PHP_METHOD(PDO, beginTransaction)
 
 /* {{{ proto bool PDO::commit()
    Commit a transaction */
-static PHP_METHOD(PDO, commit)
+PHP_METHOD(PDO, commit)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 
@@ -613,7 +612,7 @@ static PHP_METHOD(PDO, commit)
 
 /* {{{ proto bool PDO::rollBack()
    roll back a transaction */
-static PHP_METHOD(PDO, rollBack)
+PHP_METHOD(PDO, rollBack)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 
@@ -638,7 +637,7 @@ static PHP_METHOD(PDO, rollBack)
 
 /* {{{ proto bool PDO::inTransaction()
    determine if inside a transaction */
-static PHP_METHOD(PDO, inTransaction)
+PHP_METHOD(PDO, inTransaction)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 
@@ -810,7 +809,7 @@ fail:
 
 /* {{{ proto bool PDO::setAttribute(int attribute, mixed value)
    Set an attribute */
-static PHP_METHOD(PDO, setAttribute)
+PHP_METHOD(PDO, setAttribute)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 	zend_long attr;
@@ -833,7 +832,7 @@ static PHP_METHOD(PDO, setAttribute)
 
 /* {{{ proto mixed PDO::getAttribute(int attribute)
    Get an attribute */
-static PHP_METHOD(PDO, getAttribute)
+PHP_METHOD(PDO, getAttribute)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 	zend_long attr;
@@ -898,7 +897,7 @@ static PHP_METHOD(PDO, getAttribute)
 
 /* {{{ proto int PDO::exec(string statement)
    Execute a statement that does not return a row set, returning the number of affected rows */
-static PHP_METHOD(PDO, exec)
+PHP_METHOD(PDO, exec)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 	char *statement;
@@ -927,7 +926,7 @@ static PHP_METHOD(PDO, exec)
 
 /* {{{ proto string PDO::lastInsertId([string name])
    Returns the id of the last row that we affected on this connection. Some databases require a sequence or table name to be passed in. Not always meaningful. */
-static PHP_METHOD(PDO, lastInsertId)
+PHP_METHOD(PDO, lastInsertId)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 	char *name = NULL;
@@ -961,7 +960,7 @@ static PHP_METHOD(PDO, lastInsertId)
 
 /* {{{ proto string PDO::errorCode()
    Fetch the error code associated with the last operation on the database handle */
-static PHP_METHOD(PDO, errorCode)
+PHP_METHOD(PDO, errorCode)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 
@@ -987,7 +986,7 @@ static PHP_METHOD(PDO, errorCode)
 
 /* {{{ proto array PDO::errorInfo()
    Fetch extended error information associated with the last operation on the database handle */
-static PHP_METHOD(PDO, errorInfo)
+PHP_METHOD(PDO, errorInfo)
 {
 	int error_count;
 	int error_count_diff 	 = 0;
@@ -1034,7 +1033,7 @@ fill_array:
 
 /* {{{ proto object PDO::query(string sql [, PDOStatement::setFetchMode() args])
    Prepare and execute $sql; returns the statement object for iteration */
-static PHP_METHOD(PDO, query)
+PHP_METHOD(PDO, query)
 {
 	pdo_stmt_t *stmt;
 	char *statement;
@@ -1115,7 +1114,7 @@ static PHP_METHOD(PDO, query)
 
 /* {{{ proto string PDO::quote(string string [, int paramtype])
    quotes string for use in a query. The optional paramtype acts as a hint for drivers that have alternate quoting styles. The default value is PDO_PARAM_STR */
-static PHP_METHOD(PDO, quote)
+PHP_METHOD(PDO, quote)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
 	char *str;
@@ -1149,7 +1148,7 @@ static PHP_METHOD(PDO, quote)
 
 /* {{{ proto array PDO::getAvailableDrivers()
    Return array of available PDO drivers */
-static PHP_METHOD(PDO, getAvailableDrivers)
+PHP_METHOD(PDO, getAvailableDrivers)
 {
 	pdo_driver_t *pdriver;
 
@@ -1161,26 +1160,6 @@ static PHP_METHOD(PDO, getAvailableDrivers)
 		add_next_index_stringl(return_value, (char*)pdriver->driver_name, pdriver->driver_name_len);
 	} ZEND_HASH_FOREACH_END();
 }
-/* }}} */
-
-const zend_function_entry pdo_dbh_functions[] = /* {{{ */ {
-	ZEND_MALIAS(PDO, __construct, dbh_constructor,  arginfo_class_PDO___construct,	ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, prepare, 				arginfo_class_PDO_prepare,				ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, beginTransaction,       arginfo_class_PDO_beginTransaction,		ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, commit,                 arginfo_class_PDO_commit,         		ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, rollBack,               arginfo_class_PDO_rollBack,         	ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, inTransaction,          arginfo_class_PDO_inTransaction,		ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, setAttribute,			arginfo_class_PDO_setAttribute,			ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, exec,					arginfo_class_PDO_exec,					ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, query,					arginfo_class_PDO_query,				ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, lastInsertId,			arginfo_class_PDO_lastInsertId,			ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, errorCode,              arginfo_class_PDO_errorCode,        	ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, errorInfo,              arginfo_class_PDO_errorInfo,         	ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, getAttribute,			arginfo_class_PDO_getAttribute,			ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, quote,					arginfo_class_PDO_quote,				ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, getAvailableDrivers,    arginfo_class_PDO_getAvailableDrivers,	ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_FE_END
-};
 /* }}} */
 
 static void cls_method_dtor(zval *el) /* {{{ */ {
@@ -1298,7 +1277,7 @@ out:
 
 static int dbh_compare(zval *object1, zval *object2)
 {
-	return -1;
+	return ZEND_UNCOMPARABLE;
 }
 
 static HashTable *dbh_get_gc(zend_object *object, zval **gc_data, int *gc_count)
@@ -1316,7 +1295,7 @@ void pdo_dbh_init(void)
 {
 	zend_class_entry ce;
 
-	INIT_CLASS_ENTRY(ce, "PDO", pdo_dbh_functions);
+	INIT_CLASS_ENTRY(ce, "PDO", class_PDO_methods);
 	pdo_dbh_ce = zend_register_internal_class(&ce);
 	pdo_dbh_ce->create_object = pdo_dbh_new;
 	pdo_dbh_ce->serialize = zend_class_serialize_deny;

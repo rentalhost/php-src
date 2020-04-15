@@ -2,19 +2,24 @@
 
 final class Generator implements Iterator
 {
-    function rewind(): void {}
+    public function rewind(): void {}
 
-    function valid(): bool {}
+    public function valid(): bool {}
 
-    function current() {}
+    /** @return mixed */
+    public function current() {}
 
-    function key() {}
+    /** @return mixed */
+    public function key() {}
 
-    function next(): void {}
+    public function next(): void {}
 
-    function send($value) {}
+    /** @return mixed */
+    public function send($value) {}
 
-    function throw(Throwable $exception) {}
+    /** @return mixed */
+    public function throw(Throwable $exception) {}
 
-    function getReturn() {}
+    /** @return mixed */
+    public function getReturn() {}
 }

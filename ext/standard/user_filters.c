@@ -20,7 +20,7 @@
 #include "php_globals.h"
 #include "ext/standard/basic_functions.h"
 #include "ext/standard/file.h"
-#include "ext/standard/basic_functions_arginfo.h"
+#include "ext/standard/user_filters_arginfo.h"
 
 #define PHP_STREAM_BRIGADE_RES_NAME	"userfilter.bucket brigade"
 #define PHP_STREAM_BUCKET_RES_NAME "userfilter.bucket"
@@ -43,13 +43,6 @@ PHP_FUNCTION(user_filter_nop)
 {
 }
 
-static const zend_function_entry user_filter_class_funcs[] = {
-	PHP_NAMED_FE(filter,	PHP_FN(user_filter_nop),		arginfo_class_php_user_filter_filter)
-	PHP_NAMED_FE(onCreate,	PHP_FN(user_filter_nop),		arginfo_class_php_user_filter_onCreate)
-	PHP_NAMED_FE(onClose,	PHP_FN(user_filter_nop),		arginfo_class_php_user_filter_onClose)
-	PHP_FE_END
-};
-
 static zend_class_entry user_filter_class_entry;
 
 static ZEND_RSRC_DTOR_FUNC(php_bucket_dtor)
@@ -65,7 +58,7 @@ PHP_MINIT_FUNCTION(user_filters)
 {
 	zend_class_entry *php_user_filter;
 	/* init the filter class ancestor */
-	INIT_CLASS_ENTRY(user_filter_class_entry, "php_user_filter", user_filter_class_funcs);
+	INIT_CLASS_ENTRY(user_filter_class_entry, "php_user_filter", class_php_user_filter_methods);
 	if ((php_user_filter = zend_register_internal_class(&user_filter_class_entry)) == NULL) {
 		return FAILURE;
 	}
@@ -423,7 +416,7 @@ static void php_stream_bucket_attach(int append, INTERNAL_FUNCTION_PARAMETERS)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (NULL == (pzbucket = zend_hash_str_find(Z_OBJPROP_P(zobject), "bucket", sizeof("bucket")-1))) {
-		zend_value_error("Object has no bucket property");
+		zend_argument_value_error(2, "must be an object that has a 'bucket' property");
 		RETURN_THROWS();
 	}
 
@@ -551,12 +544,12 @@ PHP_FUNCTION(stream_filter_register)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (!ZSTR_LEN(filtername)) {
-		zend_value_error("Filter name cannot be empty");
+		zend_argument_value_error(1, "must be a non-empty string");
 		RETURN_THROWS();
 	}
 
 	if (!ZSTR_LEN(classname)) {
-		zend_value_error("Class name cannot be empty");
+		zend_argument_value_error(2, "must be a non-empty string");
 		RETURN_THROWS();
 	}
 

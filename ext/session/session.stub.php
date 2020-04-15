@@ -1,5 +1,7 @@
 <?php
 
+/** @generate-function-entries */
+
 function session_name(string $name = UNKNOWN): string|false {}
 
 function session_module_name(string $module = UNKNOWN): string|false {}
@@ -34,9 +36,10 @@ function session_status(): int {}
 
 function session_register_shutdown(): void {}
 
+/** @alias session_write_close */
 function session_commit(): bool {}
 
-function session_set_save_handler($open, $close = null, $read = null, $write = null, $destroy = null, $gc = null, $create_sid = null, $validate_sid = null, $update_timestamp = null): bool {}
+function session_set_save_handler($open, $close = UNKNOWN, $read = UNKNOWN, $write = UNKNOWN, $destroy = UNKNOWN, $gc = UNKNOWN, $create_sid = UNKNOWN, $validate_sid = UNKNOWN, $update_timestamp = UNKNOWN): bool {}
 
 function session_cache_limiter(string $cache_limiter = UNKNOWN): string|false {}
 
@@ -49,35 +52,59 @@ function session_start(array $options = []): bool {}
 interface SessionHandlerInterface
 {
     /** @return bool */
-    function open(string $save_path, string $session_name);
+    public function open(string $save_path, string $session_name);
 
     /** @return bool */
-    function close();
+    public function close();
 
     /** @return string */
-    function read(string $key);
+    public function read(string $key);
 
     /** @return bool */
-    function write(string $key, string $val);
+    public function write(string $key, string $val);
 
     /** @return bool */
-    function destroy(string $key);
+    public function destroy(string $key);
 
     /** @return int|bool */
-    function gc(int $maxlifetime);
+    public function gc(int $maxlifetime);
 }
 
 interface SessionIdInterface
 {
     /** @return string */
-    function create_sid();
+    public function create_sid();
 }
 
 interface SessionUpdateTimestampHandlerInterface
 {
     /** @return bool */
-    function validateId(string $key);
+    public function validateId(string $key);
 
     /** @return bool */
-    function updateTimestamp(string $key, string $val);
+    public function updateTimestamp(string $key, string $val);
+}
+
+class SessionHandler implements SessionHandlerInterface, SessionIdInterface
+{
+    /** @return bool */
+    public function open(string $save_path, string $session_name) {}
+
+    /** @return bool */
+    public function close() {}
+
+    /** @return string */
+    public function read(string $key) {}
+
+    /** @return bool */
+    public function write(string $key, string $val) {}
+
+    /** @return bool */
+    public function destroy(string $key) {}
+
+    /** @return int|bool */
+    public function gc(int $maxlifetime) {}
+
+    /** @return string */
+    public function create_sid() {}
 }
