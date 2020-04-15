@@ -126,6 +126,7 @@ ZEND_API zend_ast *zend_ast_create_decl(
 	ast->flags = flags;
 	ast->lex_pos = LANG_SCNG(yy_text);
 	ast->doc_comment = doc_comment;
+	ast->attributes = NULL;
 	ast->name = name;
 	ast->child[0] = child0;
 	ast->child[1] = child1;
@@ -857,6 +858,9 @@ tail_call:
 		if (decl->doc_comment) {
 			zend_string_release_ex(decl->doc_comment, 0);
 		}
+		if (decl->attributes) {
+			zend_ast_destroy(decl->attributes);
+		}
 		zend_ast_destroy(decl->child[0]);
 		zend_ast_destroy(decl->child[1]);
 		zend_ast_destroy(decl->child[2]);
@@ -1541,6 +1545,9 @@ simple_list:
 		case ZEND_AST_CLASS_CONST_DECL:
 			smart_str_appends(str, "const ");
 			goto simple_list;
+		case ZEND_AST_CLASS_CONST_DECL_ATTRIBUTES:
+			zend_ast_export_ex(str, ast->child[0], 0, indent);
+			break;
 		case ZEND_AST_NAME_LIST:
 			zend_ast_export_name_list(str, (zend_ast_list*)ast, indent);
 			break;
@@ -2110,4 +2117,33 @@ ZEND_API ZEND_COLD zend_string *zend_ast_export(const char *prefix, zend_ast *as
 	smart_str_appends(&str, suffix);
 	smart_str_0(&str);
 	return str.s;
+}
+
+zend_ast * ZEND_FASTCALL zend_ast_with_attributes(zend_ast *ast, zend_ast *attr)
+{
+	ZEND_ASSERT(attr->kind == ZEND_AST_ATTRIBUTE_LIST);
+
+	switch (ast->kind) {
+	case ZEND_AST_FUNC_DECL:
+	case ZEND_AST_CLOSURE:
+	case ZEND_AST_METHOD:
+	case ZEND_AST_CLASS:
+	case ZEND_AST_ARROW_FUNC:
+		((zend_ast_decl *) ast)->attributes = attr;
+		break;
+	case ZEND_AST_PROP_GROUP:
+		ast->child[2] = attr;
+		break;
+	case ZEND_AST_PARAM:
+		ast->child[3] = attr;
+		break;
+	case ZEND_AST_CLASS_CONST_DECL:
+		ast = zend_ast_create(ZEND_AST_CLASS_CONST_DECL_ATTRIBUTES, ast, attr);
+		ast->lineno = ast->child[0]->lineno;
+		break;
+	default:
+		zend_error_noreturn(E_COMPILE_ERROR, "Invalid use of attributes");
+	}
+
+	return ast;
 }

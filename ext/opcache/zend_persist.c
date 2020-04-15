@@ -76,6 +76,25 @@
 		} \
 	} while (0)
 
+#define zend_persist_attributes(attr) do { \
+	HashTable *ptr = zend_shared_alloc_get_xlat_entry(attr); \
+	if (ptr) { \
+		(attr) = ptr; \
+	} else { \
+		Bucket *p; \
+		zend_hash_persist(attr); \
+		ZEND_HASH_FOREACH_BUCKET((attr), p) { \
+			if (p->key) { \
+				zend_accel_store_interned_string(p->key); \
+			} \
+			zend_persist_zval(&p->val); \
+		} ZEND_HASH_FOREACH_END(); \
+		(attr) = zend_shared_memdup_put_free((attr), sizeof(HashTable)); \
+		GC_SET_REFCOUNT((attr), 2); \
+		GC_TYPE_INFO(attr) = IS_ARRAY | (IS_ARRAY_IMMUTABLE << GC_FLAGS_SHIFT); \
+	} \
+} while (0)
+
 typedef void (*zend_persist_func_t)(zval*);
 
 static void zend_persist_zval(zval *z);
@@ -375,6 +394,10 @@ static void zend_persist_op_array_ex(zend_op_array *op_array, zend_persistent_sc
 					op_array->doc_comment = NULL;
 				}
 			}
+			if (op_array->attributes) {
+				zend_persist_attributes(op_array->attributes);
+			}
+
 			if (op_array->try_catch_array) {
 				op_array->try_catch_array = zend_shared_alloc_get_xlat_entry(op_array->try_catch_array);
 				ZEND_ASSERT(op_array->try_catch_array != NULL);
@@ -551,6 +574,10 @@ static void zend_persist_op_array_ex(zend_op_array *op_array, zend_persistent_sc
 		}
 	}
 
+	if (op_array->attributes) {
+		zend_persist_attributes(op_array->attributes);
+	}
+
 	if (op_array->try_catch_array) {
 		op_array->try_catch_array = zend_shared_memdup_put_free(op_array->try_catch_array, sizeof(zend_try_catch_element) * op_array->last_try_catch);
 	}
@@ -693,6 +720,9 @@ static void zend_persist_property_info(zval *zv)
 			prop->doc_comment = NULL;
 		}
 	}
+	if (prop->attributes) {
+		zend_persist_attributes(prop->attributes);
+	}
 	zend_persist_type(&prop->type);
 }
 
@@ -731,6 +761,9 @@ static void zend_persist_class_constant(zval *zv)
 			}
 			c->doc_comment = NULL;
 		}
+	}
+	if (c->attributes) {
+		zend_persist_attributes(c->attributes);
 	}
 }
 
@@ -817,6 +850,9 @@ static void zend_persist_class_entry(zval *zv)
 				}
 				ce->info.user.doc_comment = NULL;
 			}
+		}
+		if (ce->info.user.attributes) {
+			zend_persist_attributes(ce->info.user.attributes);
 		}
 		zend_hash_persist(&ce->properties_info);
 		ZEND_HASH_FOREACH_BUCKET(&ce->properties_info, p) {

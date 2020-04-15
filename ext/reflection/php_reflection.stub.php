@@ -95,6 +95,9 @@ abstract class ReflectionFunctionAbstract implements Reflector
 
     /** @return ReflectionType|null */
     public function getReturnType() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionFunction extends ReflectionFunctionAbstract
@@ -360,6 +363,9 @@ class ReflectionClass implements Reflector
 
     /** @return string */
     public function getShortName() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionObject extends ReflectionClass
@@ -426,6 +432,9 @@ class ReflectionProperty implements Reflector
 
     /** @return mixed */
     public function getDefaultValue() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionClassConstant implements Reflector
@@ -461,6 +470,9 @@ class ReflectionClassConstant implements Reflector
 
     /** @return string|false */
     public function getDocComment() {}
+
+    /** @return ReflectionAttribute[] */
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 class ReflectionParameter implements Reflector
@@ -529,6 +541,9 @@ class ReflectionParameter implements Reflector
 
     /** @return bool */
     public function isVariadic() {}
+    
+    /** @return ReflectionAttribute[] */
+    public function getAttributes(?string $name = null, int $flags = 0) {}
 }
 
 abstract class ReflectionType implements Stringable
@@ -632,6 +647,17 @@ final class ReflectionReference
     public function getId(): string {}
 
     /** @alias ReflectionClass::__clone */
+    private function __clone() {}
+
+    private function __construct() {}
+}
+
+final class ReflectionAttribute
+{
+    public function getName(): string {}
+    public function getArguments(): array {}
+    public function getAsObject(): object {}
+
     private function __clone() {}
 
     private function __construct() {}

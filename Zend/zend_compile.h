@@ -120,6 +120,7 @@ typedef struct _zend_file_context {
 typedef union _zend_parser_stack_elem {
 	zend_ast *ast;
 	zend_string *str;
+	HashTable *hash;
 	zend_ulong num;
 	unsigned char *ptr;
 } zend_parser_stack_elem;
@@ -351,6 +352,7 @@ typedef struct _zend_property_info {
 	uint32_t flags;
 	zend_string *name;
 	zend_string *doc_comment;
+	HashTable *attributes;
 	zend_class_entry *ce;
 	zend_type type;
 } zend_property_info;
@@ -367,6 +369,7 @@ typedef struct _zend_property_info {
 typedef struct _zend_class_constant {
 	zval value; /* access flags are stored in reserved: zval.u2.access_flags */
 	zend_string *doc_comment;
+	HashTable *attributes;
 	zend_class_entry *ce;
 } zend_class_constant;
 
@@ -430,6 +433,7 @@ struct _zend_op_array {
 	uint32_t line_start;
 	uint32_t line_end;
 	zend_string *doc_comment;
+	HashTable   *attributes;
 
 	int last_literal;
 	zval *literals;

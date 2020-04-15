@@ -53,6 +53,21 @@
 		} \
 	} while (0)
 
+#define zend_persist_attributes_calc(attr) do { \
+	if (!zend_shared_alloc_get_xlat_entry(attr)) { \
+		Bucket *p; \
+		zend_shared_alloc_register_xlat_entry((attr), (attr)); \
+		ADD_SIZE(sizeof(HashTable)); \
+		zend_hash_persist_calc(attr); \
+		ZEND_HASH_FOREACH_BUCKET((attr), p) { \
+			if (p->key) { \
+				ADD_INTERNED_STRING(p->key); \
+			} \
+			zend_persist_zval_calc(&p->val); \
+		} ZEND_HASH_FOREACH_END(); \
+	} \
+} while (0)
+
 static void zend_persist_zval_calc(zval *z);
 
 static void zend_hash_persist_calc(HashTable *ht)
@@ -249,6 +264,10 @@ static void zend_persist_op_array_calc_ex(zend_op_array *op_array)
 		ADD_STRING(op_array->doc_comment);
 	}
 
+	if (op_array->attributes) {
+		zend_persist_attributes_calc(op_array->attributes);
+	}
+
 	if (op_array->try_catch_array) {
 		ADD_SIZE(sizeof(zend_try_catch_element) * op_array->last_try_catch);
 	}
@@ -325,6 +344,9 @@ static void zend_persist_property_info_calc(zval *zv)
 		if (ZCG(accel_directives).save_comments && prop->doc_comment) {
 			ADD_STRING(prop->doc_comment);
 		}
+		if (prop->attributes) {
+			zend_persist_attributes_calc(prop->attributes);
+		}
 	}
 }
 
@@ -338,6 +360,9 @@ static void zend_persist_class_constant_calc(zval *zv)
 		zend_persist_zval_calc(&c->value);
 		if (ZCG(accel_directives).save_comments && c->doc_comment) {
 			ADD_STRING(c->doc_comment);
+		}
+		if (c->attributes) {
+			zend_persist_attributes_calc(c->attributes);
 		}
 	}
 }
@@ -423,6 +448,9 @@ static void zend_persist_class_entry_calc(zval *zv)
 		}
 		if (ZCG(accel_directives).save_comments && ce->info.user.doc_comment) {
 			ADD_STRING(ce->info.user.doc_comment);
+		}
+		if (ce->info.user.attributes) {
+			zend_persist_attributes_calc(ce->info.user.attributes);
 		}
 
 		zend_hash_persist_calc(&ce->properties_info);
