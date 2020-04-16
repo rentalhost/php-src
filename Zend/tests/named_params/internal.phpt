@@ -6,7 +6,6 @@ Named params on internal functions
 var_dump(array_slice(arg => [1, 2, 3, 4, 5], offset => 2, length => 2));
 var_dump(array_slice(length => 2, offset => 2, arg => [1, 2, 3, 4, 5]));
 
-// These don't work correctly!
 var_dump(array_slice(arg => ['a' => 0, 'b' => 1], offset => 1, preserve_keys => true));
 var_dump(array_slice(['a' => 0, 'b' => 1], preserve_keys => true, offset => 1));
 
@@ -24,7 +23,11 @@ array(2) {
   [1]=>
   int(4)
 }
-array(0) {
+array(1) {
+  ["b"]=>
+  int(1)
 }
-array(0) {
+array(1) {
+  ["b"]=>
+  int(1)
 }

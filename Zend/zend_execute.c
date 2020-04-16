@@ -711,7 +711,7 @@ ZEND_API ZEND_COLD void zend_verify_arg_error(
 
 		zend_string_release(need_msg);
 	} else {
-		zend_missing_arg_error(ptr);
+		zend_missing_arg_error(ptr, arg_num);
 	}
 }
 
@@ -1145,9 +1145,14 @@ static ZEND_COLD void zend_internal_call_arginfo_violation(zend_function *fbc)
 }
 #endif
 
-ZEND_API ZEND_COLD void ZEND_FASTCALL zend_missing_arg_error(zend_execute_data *execute_data)
+ZEND_API ZEND_COLD void ZEND_FASTCALL zend_missing_arg_error(zend_execute_data *execute_data, uint32_t arg_num)
 {
 	zend_execute_data *ptr = EX(prev_execute_data);
+
+	if (arg_num < EX(func)->common.required_num_args) {
+		zend_argument_error(zend_ce_argument_count_error, arg_num, "not passed");
+		return;
+	}
 
 	if (ptr && ptr->func && ZEND_USER_CODE(ptr->func->common.type)) {
 		zend_throw_error(zend_ce_argument_count_error, "Too few arguments to function %s%s%s(), %d passed in %s on line %d and %s %d expected",
@@ -4353,6 +4358,40 @@ static zval * ZEND_FASTCALL zend_handle_named_arg(
 
 	*arg_num_ptr = arg_offset + 1;
 	return arg;
+}
+
+static int zend_handle_icall_undef_args(zend_execute_data *call) {
+	zend_function *fbc = call->func;
+	uint32_t num_args = ZEND_CALL_NUM_ARGS(call);
+	for (uint32_t i = 0; i < num_args; i++) {
+		zval *arg = ZEND_CALL_VAR_NUM(call, i);
+		if (!Z_ISUNDEF_P(arg)) {
+			continue;
+		}
+
+		zend_internal_arg_info *arg_info = &fbc->internal_function.arg_info[i];
+		if (i < fbc->common.required_num_args) {
+			zend_argument_error(zend_ce_argument_count_error, i + 1, "not passed");
+			return FAILURE;
+		}
+
+		zval default_value;
+		if (zend_get_default_from_internal_arg_info(&default_value, arg_info) == FAILURE) {
+			zend_argument_error(zend_ce_argument_count_error, i + 1,
+				"must be passed explicitly, because the default value is not known");
+			return FAILURE;
+		}
+
+		if (Z_TYPE(default_value) == IS_CONSTANT_AST) {
+			if (zval_update_constant_ex(&default_value, fbc->common.scope) == FAILURE) {
+				return FAILURE;
+			}
+		}
+
+		ZVAL_COPY_VALUE(arg, &default_value);
+	}
+
+	return SUCCESS;
 }
 
 #if defined(ZEND_VM_IP_GLOBAL_REG) && ((ZEND_VM_KIND == ZEND_VM_KIND_CALL) || (ZEND_VM_KIND == ZEND_VM_KIND_HYBRID))

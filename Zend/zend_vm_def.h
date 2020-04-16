@@ -3870,6 +3870,12 @@ ZEND_VM_HOT_HANDLER(129, ZEND_DO_ICALL, ANY, ANY, SPEC(RETVAL))
 	ret = RETURN_VALUE_USED(opline) ? EX_VAR(opline->result.var) : &retval;
 	ZVAL_NULL(ret);
 
+	if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_MAY_HAVE_UNDEF)) {
+		if (zend_handle_icall_undef_args(call) == FAILURE) {
+			ZEND_VM_C_GOTO(do_icall_cleanup);
+		}
+	}
+
 	fbc->internal_function.handler(call, ret);
 
 #if ZEND_DEBUG
@@ -3884,6 +3890,7 @@ ZEND_VM_HOT_HANDLER(129, ZEND_DO_ICALL, ANY, ANY, SPEC(RETVAL))
 	}
 #endif
 
+ZEND_VM_C_LABEL(do_icall_cleanup):
 	EG(current_execute_data) = execute_data;
 	zend_vm_stack_free_args(call);
 	zend_vm_stack_free_call_frame(call);
@@ -3971,6 +3978,13 @@ ZEND_VM_HOT_HANDLER(131, ZEND_DO_FCALL_BY_NAME, ANY, ANY, SPEC(RETVAL))
 
 		ret = RETURN_VALUE_USED(opline) ? EX_VAR(opline->result.var) : &retval;
 		ZVAL_NULL(ret);
+
+		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_MAY_HAVE_UNDEF)) {
+			if (zend_handle_icall_undef_args(call) == FAILURE) {
+			EG(current_execute_data) = execute_data;
+				ZEND_VM_C_GOTO(fcall_by_name_end);
+			}
+		}
 
 		fbc->internal_function.handler(call, ret);
 
@@ -4060,6 +4074,13 @@ ZEND_VM_HOT_HANDLER(60, ZEND_DO_FCALL, ANY, ANY, SPEC(RETVAL))
 
 		ret = RETURN_VALUE_USED(opline) ? EX_VAR(opline->result.var) : &retval;
 		ZVAL_NULL(ret);
+
+		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_MAY_HAVE_UNDEF)) {
+			if (zend_handle_icall_undef_args(call) == FAILURE) {
+				EG(current_execute_data) = execute_data;
+				ZEND_VM_C_GOTO(fcall_end);
+			}
+		}
 
 		if (!zend_execute_internal) {
 			/* saves one function call if zend_execute_internal is not used */
@@ -5168,14 +5189,14 @@ ZEND_VM_HANDLER(120, ZEND_SEND_USER, CONST|TMP|VAR|CV, NUM)
 	ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 }
 
-ZEND_VM_COLD_HELPER(zend_missing_arg_helper, ANY, ANY)
+ZEND_VM_COLD_HELPER(zend_missing_arg_helper, ANY, ANY, uint32_t arg_num)
 {
 #ifdef ZEND_VM_IP_GLOBAL_REG
 	USE_OPLINE
 
 	SAVE_OPLINE();
 #endif
-	zend_missing_arg_error(execute_data);
+	zend_missing_arg_error(execute_data, arg_num);
 	HANDLE_EXCEPTION();
 }
 
@@ -5199,7 +5220,7 @@ ZEND_VM_HOT_HANDLER(63, ZEND_RECV, NUM, UNUSED, CACHE_SLOT)
 
 	param = EX_VAR(opline->result.var);
 	if (UNEXPECTED(arg_num > EX_NUM_ARGS() || Z_ISUNDEF_P(param))) {
-		ZEND_VM_DISPATCH_TO_HELPER(zend_missing_arg_helper);
+		ZEND_VM_DISPATCH_TO_HELPER(zend_missing_arg_helper, arg_num, arg_num);
 	}
 
 	if (UNEXPECTED(!(opline->op2.num & (1u << Z_TYPE_P(param))))) {
@@ -5215,7 +5236,7 @@ ZEND_VM_HOT_TYPE_SPEC_HANDLER(ZEND_RECV, op->op2.num == MAY_BE_ANY, ZEND_RECV_NO
 	uint32_t arg_num = opline->op1.num;
 
 	if (UNEXPECTED(arg_num > EX_NUM_ARGS())) {
-		ZEND_VM_DISPATCH_TO_HELPER(zend_missing_arg_helper);
+		ZEND_VM_DISPATCH_TO_HELPER(zend_missing_arg_helper, arg_num, arg_num);
 	}
 
 	ZEND_VM_NEXT_OPCODE();
