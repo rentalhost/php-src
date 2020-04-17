@@ -4345,6 +4345,7 @@ static zval * ZEND_FASTCALL zend_handle_named_arg(
 				ZSTR_VAL(arg_name));
 			return NULL;
 		}
+		*arg_num_ptr = arg_offset + 1;
 		return arg;
 	}
 

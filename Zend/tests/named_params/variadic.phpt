@@ -3,7 +3,7 @@ Additional named params are collect into variadics
 --FILE--
 <?php
 
-function test($a, string...$extra) {
+function test($a, string ...$extra) {
     var_dump($a);
     var_dump($extra);
     // Extra named parameters do not contribute toward func_num_args() and func_get_args().
@@ -11,15 +11,23 @@ function test($a, string...$extra) {
     var_dump(func_get_args());
 }
 
+function test2(&...$refs) {
+    foreach ($refs as &$ref) $ref++;
+}
+
 test(b => 'b', a => 'a', c => 'c', extra => 'extra');
 echo "\n";
+
 test('a', 'b', 'c', d => 'd');
 echo "\n";
-test(...['b' => 'b', 'a' => 'a', 'c' => 'c', 'extra' => 'extra']);
 
+$x = 0;
+$y = 0;
+test2(x => $x, y => $y);
+var_dump($x, $y);
 
 ?>
---EXPECTF--
+--EXPECT--
 string(1) "a"
 array(3) {
   ["b"]=>
@@ -54,8 +62,5 @@ array(3) {
   string(1) "c"
 }
 
-
-Fatal error: Uncaught Error: Cannot unpack array with string keys in %s:%d
-Stack trace:
-#0 {main}
-  thrown in %s on line %d
+int(1)
+int(1)

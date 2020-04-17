@@ -1860,7 +1860,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_SEND_UNPACK_SPEC_HANDLER(ZEND_
 {
 	USE_OPLINE
 	zval *args;
-	int arg_num;
+	uint32_t arg_num;
 
 	SAVE_OPLINE();
 	args = get_zval_ptr_undef(opline->op1_type, opline->op1, BP_VAR_R);
@@ -1871,20 +1871,28 @@ send_again:
 		HashTable *ht = Z_ARRVAL_P(args);
 		zval *arg, *top;
 		zend_string *name;
+		zend_bool have_named_params = 0;
 
 		zend_vm_stack_extend_call_frame(&EX(call), arg_num - 1, zend_hash_num_elements(ht));
 
+		// TODO: Speed this up using a flag that specifies whether there are any ref parameters.
 		if ((opline->op1_type & (IS_VAR|IS_CV)) && Z_REFCOUNT_P(args) > 1) {
-			uint32_t i;
+			uint32_t tmp_arg_num = arg_num;
 			int separate = 0;
 
 			/* check if any of arguments are going to be passed by reference */
-			for (i = 0; i < zend_hash_num_elements(ht); i++) {
-				if (ARG_SHOULD_BE_SENT_BY_REF(EX(call)->func, arg_num + i)) {
+			ZEND_HASH_FOREACH_STR_KEY_VAL(ht, name, arg) {
+				if (UNEXPECTED(name)) {
+					void *cache_slot[2] = {NULL, NULL};
+					tmp_arg_num = zend_get_arg_offset_by_name(
+						EX(call)->func, name, cache_slot) + 1;
+				}
+				if (ARG_SHOULD_BE_SENT_BY_REF(EX(call)->func, tmp_arg_num)) {
 					separate = 1;
 					break;
 				}
-			}
+				tmp_arg_num++;
+			} ZEND_HASH_FOREACH_END();
 			if (separate) {
 				SEPARATE_ARRAY(args);
 				ht = Z_ARRVAL_P(args);
@@ -1892,13 +1900,26 @@ send_again:
 		}
 
 		ZEND_HASH_FOREACH_STR_KEY_VAL(ht, name, arg) {
-			if (name) {
-				zend_throw_error(NULL, "Cannot unpack array with string keys");
-				FREE_OP(opline->op1_type, opline->op1.var);
-				HANDLE_EXCEPTION();
+			if (UNEXPECTED(name)) {
+				void *cache_slot[2] = {NULL, NULL};
+				have_named_params = 1;
+				top = zend_handle_named_arg(&EX(call), name, &arg_num, cache_slot);
+				if (UNEXPECTED(!top)) {
+					FREE_OP(opline->op1_type, opline->op1.var);
+					HANDLE_EXCEPTION();
+				}
+			} else {
+				if (have_named_params) {
+					zend_throw_error(NULL,
+						"Cannot use positional argument after named argument during unpacking");
+					FREE_OP(opline->op1_type, opline->op1.var);
+					HANDLE_EXCEPTION();
+				}
+
+				top = ZEND_CALL_ARG(EX(call), arg_num);
+				ZEND_CALL_NUM_ARGS(EX(call))++;
 			}
 
-			top = ZEND_CALL_ARG(EX(call), arg_num);
 			if (ARG_SHOULD_BE_SENT_BY_REF(EX(call)->func, arg_num)) {
 				if (Z_ISREF_P(arg)) {
 					Z_ADDREF_P(arg);
@@ -1915,7 +1936,6 @@ send_again:
 				ZVAL_COPY_DEREF(top, arg);
 			}
 
-			ZEND_CALL_NUM_ARGS(EX(call))++;
 			arg_num++;
 		} ZEND_HASH_FOREACH_END();
 
@@ -1961,6 +1981,7 @@ send_again:
 						break;
 					}
 
+					// TODO: Support named params.
 					if (UNEXPECTED(Z_TYPE(key) != IS_LONG)) {
 						zend_throw_error(NULL,
 							(Z_TYPE(key) == IS_STRING) ?
