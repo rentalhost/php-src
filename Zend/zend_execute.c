@@ -4311,6 +4311,12 @@ static zend_always_inline uint32_t zend_get_arg_offset_by_name(
 		}
 	}
 
+	if (fbc->common.fn_flags & ZEND_ACC_VARIADIC) {
+		*cache_slot = fbc;
+		*(uintptr_t *)(cache_slot + 1) = fbc->common.num_args;
+		return fbc->common.num_args;
+	}
+
 	return (uint32_t) -1;
 }
 
@@ -4321,12 +4327,27 @@ static zval * ZEND_FASTCALL zend_handle_named_arg(
 	zend_function *fbc = call->func;
 	uint32_t arg_offset = zend_get_arg_offset_by_name(fbc, arg_name, cache_slot);
 	if (UNEXPECTED(arg_offset == (uint32_t) -1)) {
-		// TODO: Allow collection of non-existent named parameters.
 		zend_throw_error(NULL, "Unknown named parameter $%s", ZSTR_VAL(arg_name));
 		return NULL;
 	}
 
 	zval *arg;
+	if (UNEXPECTED(arg_offset == fbc->common.num_args)) {
+		/* Unknown named parameter that will be collected into a variadic. */
+		if (!(ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+			ZEND_ADD_CALL_FLAG(call, ZEND_CALL_HAS_EXTRA_NAMED_PARAMS);
+			call->extra_named_params = zend_new_array(0);
+		}
+
+		arg = zend_hash_add_empty_element(call->extra_named_params, arg_name);
+		if (!arg) {
+			zend_throw_error(NULL, "Named parameter $%s overwrites previous argument",
+				ZSTR_VAL(arg_name));
+			return NULL;
+		}
+		return arg;
+	}
+
 	uint32_t current_num_args = ZEND_CALL_NUM_ARGS(call);
 	// TODO: We may wish to optimize the arg_offset == current_num_args case,
 	// which is probably common (if the named parameters are in order of declaration).

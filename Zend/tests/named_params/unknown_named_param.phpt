@@ -15,7 +15,6 @@ try {
     echo $e->getMessage(), "\n";
 }
 
-// This may be supported in the future.
 try {
     test2(a => 42);
 } catch (Error $e) {
@@ -25,4 +24,3 @@ try {
 ?>
 --EXPECT--
 Unknown named parameter $b
-Unknown named parameter $a

@@ -507,6 +507,7 @@ struct _zend_execute_data {
 	zend_execute_data   *prev_execute_data;
 	zend_array          *symbol_table;
 	void               **run_time_cache;   /* cache op_array->run_time_cache */
+	zend_array          *extra_named_params;
 };
 
 #define ZEND_CALL_HAS_THIS           IS_OBJECT_EX
@@ -525,6 +526,7 @@ struct _zend_execute_data {
 #define ZEND_CALL_GENERATOR          (1 << 24)
 #define ZEND_CALL_DYNAMIC            (1 << 25)
 #define ZEND_CALL_MAY_HAVE_UNDEF     (1 << 26)
+#define ZEND_CALL_HAS_EXTRA_NAMED_PARAMS (1 << 27)
 #define ZEND_CALL_SEND_ARG_BY_REF    (1u << 31)
 
 #define ZEND_CALL_NESTED_FUNCTION    (ZEND_CALL_FUNCTION | ZEND_CALL_NESTED)
