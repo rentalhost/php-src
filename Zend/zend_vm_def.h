@@ -5039,6 +5039,7 @@ ZEND_VM_C_LABEL(send_again):
 					break;
 				}
 
+				zend_string *name = NULL;
 				if (iter->funcs->get_current_key) {
 					zval key;
 					iter->funcs->get_current_key(iter, &key);
@@ -5048,13 +5049,22 @@ ZEND_VM_C_LABEL(send_again):
 
 					// TODO: Support named params.
 					if (UNEXPECTED(Z_TYPE(key) != IS_LONG)) {
-						zend_throw_error(NULL,
-							(Z_TYPE(key) == IS_STRING) ?
-								"Cannot unpack Traversable with string keys" :
-								"Cannot unpack Traversable with non-integer keys");
-						zval_ptr_dtor(&key);
-						break;
+						if (UNEXPECTED(Z_TYPE(key) != IS_STRING)) {
+							zend_throw_error(NULL,
+								"Keys must be of type int|string during argument unpacking");
+							zval_ptr_dtor(&key);
+							break;
+						}
+
+						name = Z_STR_P(&key);
 					}
+				}
+
+				if (name) {
+					void *cache_slot[2] = {NULL, NULL};
+					have_named_params = 1;
+					top = zend_handle_named_arg(&EX(call), name, &arg_num, cache_slot);
+				} else {
 				}
 
 				if (ARG_MUST_BE_SENT_BY_REF(EX(call)->func, arg_num)) {
@@ -5075,6 +5085,9 @@ ZEND_VM_C_LABEL(send_again):
 				ZVAL_COPY_VALUE(top, arg);
 				ZEND_CALL_NUM_ARGS(EX(call))++;
 
+				if (name) {
+					zend_string_release(name);
+				}
 				iter->funcs->move_forward(iter);
 			}
 
