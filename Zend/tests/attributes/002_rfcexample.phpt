@@ -1,7 +1,8 @@
 --TEST--
-Attributes: RFC Example
+Attributes: Example from Attributes RFC
 --FILE--
 <?php
+// https://wiki.php.net/rfc/attributes_v2#attribute_syntax
 namespace My\Attributes {
     use PhpAttribute;
 

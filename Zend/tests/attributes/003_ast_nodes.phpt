@@ -50,6 +50,11 @@ var_dump(count($args));
 var_dump($args[0] === 'foo');
 var_dump($args[1] === C1::BAR);
 
+<<ExampleWithShift(4 >> 1)>>
+class C4 {}
+$ref = new \ReflectionClass(C4::class);
+var_dump($ref->getAttributes()[0]->getArguments());
+
 ?>
 --EXPECT--
 int(1)
@@ -66,3 +71,7 @@ int(1)
 int(2)
 bool(true)
 bool(true)
+array(1) {
+  [0]=>
+  int(2)
+}
