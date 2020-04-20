@@ -18,8 +18,8 @@ class A1
 $ref = new \ReflectionFunction(<<A1('test')>> function () { });
 
 foreach ($ref->getAttributes() as $attr) {
-	$obj = $attr->getAsObject();
-	
+	$obj = $attr->newInstance();
+
 	var_dump(get_class($obj), $obj->name, $obj->ttl);
 }
 
@@ -28,7 +28,7 @@ echo "\n";
 $ref = new \ReflectionFunction(<<A1>> function () { });
 
 try {
-	$ref->getAttributes()[0]->getAsObject();
+	$ref->getAttributes()[0]->newInstance();
 } catch (\ArgumentCountError $e) {
 	var_dump('ERROR 1', $e->getMessage());
 }
@@ -38,7 +38,7 @@ echo "\n";
 $ref = new \ReflectionFunction(<<A1([])>> function () { });
 
 try {
-	$ref->getAttributes()[0]->getAsObject();
+	$ref->getAttributes()[0]->newInstance();
 } catch (\TypeError $e) {
 	var_dump('ERROR 2', $e->getMessage());
 }
@@ -48,7 +48,7 @@ echo "\n";
 $ref = new \ReflectionFunction(<<A2>> function () { });
 
 try {
-	$ref->getAttributes()[0]->getAsObject();
+	$ref->getAttributes()[0]->newInstance();
 } catch (\Error $e) {
 	var_dump('ERROR 3', $e->getMessage());
 }
@@ -63,7 +63,7 @@ class A3
 $ref = new \ReflectionFunction(<<A3>> function () { });
 
 try {
-	$ref->getAttributes()[0]->getAsObject();
+	$ref->getAttributes()[0]->newInstance();
 } catch (\Error $e) {
 	var_dump('ERROR 4', $e->getMessage());
 }
@@ -75,7 +75,7 @@ class A4 { }
 $ref = new \ReflectionFunction(<<A4(1)>> function () { });
 
 try {
-	$ref->getAttributes()[0]->getAsObject();
+	$ref->getAttributes()[0]->newInstance();
 } catch (\Error $e) {
 	var_dump('ERROR 5', $e->getMessage());
 }

@@ -541,7 +541,7 @@ class ReflectionParameter implements Reflector
 
     /** @return bool */
     public function isVariadic() {}
-    
+
     /** @return ReflectionAttribute[] */
     public function getAttributes(?string $name = null, int $flags = 0) {}
 }
@@ -656,7 +656,7 @@ final class ReflectionAttribute
 {
     public function getName(): string {}
     public function getArguments(): array {}
-    public function getAsObject(): object {}
+    public function newInstance(): object {}
 
     private function __clone() {}
 

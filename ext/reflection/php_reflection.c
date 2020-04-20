@@ -6647,9 +6647,9 @@ static void attribute_ctor_cleanup(zval *obj, zval *args, uint32_t argc) /* {{{ 
 }
 /* }}} */
 
-/* {{{ proto public string ReflectionAttribute::getAsObject()
+/* {{{ proto public string ReflectionAttribute::newInstance()
  *	   Returns the attribute as an object */
-ZEND_METHOD(ReflectionAttribute, getAsObject)
+ZEND_METHOD(ReflectionAttribute, newInstance)
 {
 	reflection_object *intern;
 	attribute_reference *attr;
