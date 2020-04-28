@@ -6655,6 +6655,7 @@ ZEND_METHOD(ReflectionAttribute, newInstance)
 	attribute_reference *attr;
 
 	zend_class_entry *ce;
+	zend_string *lcname;
 	zval obj;
 
 	zval *args = NULL;
@@ -6672,23 +6673,23 @@ ZEND_METHOD(ReflectionAttribute, newInstance)
 		RETURN_THROWS();
 	}
 
-	if (SUCCESS != object_init_ex(&obj, ce)) {
-		RETURN_THROWS();
-	}
+	lcname = zend_string_tolower(ce->name);
 
-	zend_string *lower_name = zend_string_tolower_ex(ce->name, 1);
-
-	if (ce->type == ZEND_USER_CLASS && ce->info.user.attributes && zend_hash_str_exists(ce->info.user.attributes, "phpattribute", sizeof("phpattribute")-1) == 0) {
-		zend_string_release(lower_name);
+	if (ce->type == ZEND_USER_CLASS && (!ce->info.user.attributes || !zend_hash_str_exists(ce->info.user.attributes, ZEND_STRL("phpattribute")))) {
+		zend_string_release(lcname);
 		zend_throw_error(NULL, "Attempting to use class '%s' as attribute that does not have <<PhpAttribute>>.", ZSTR_VAL(attr->name));
 		RETURN_THROWS();
-	} else if (ce->type == ZEND_INTERNAL_CLASS && zend_hash_exists(&zend_attributes_internal_validators, lower_name) == 0) {
-		zend_string_release(lower_name);
+	} else if (ce->type == ZEND_INTERNAL_CLASS && zend_hash_exists(&zend_attributes_internal_validators, lcname) == 0) {
+		zend_string_release(lcname);
 		zend_throw_error(NULL, "Attempting to use internal class '%s' as attribute that does not have <<PhpCompilerAttribute>>.", ZSTR_VAL(attr->name));
 		RETURN_THROWS();
 	}
 
-	zend_string_release(lower_name);
+	zend_string_release(lcname);
+
+	if (SUCCESS != object_init_ex(&obj, ce)) {
+		RETURN_THROWS();
+	}
 
 	count = zend_hash_num_elements(Z_ARRVAL(attr->arguments));
 
