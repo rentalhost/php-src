@@ -2,14 +2,14 @@
 #include "zend_API.h"
 #include "zend_attributes.h"
 
-void zend_attribute_validate_phpattribute(zval *attribute, int target)
+void zend_attribute_validate_phpattribute(zend_attribute *attr, int target)
 {
 	if (target != ZEND_ATTRIBUTE_TARGET_CLASS) {
 		zend_error(E_COMPILE_ERROR, "Only classes can be marked with <<PhpAttribute>>");
 	}
 }
 
-void zend_attribute_validate_phpcompilerattribute(zval *attribute, int target)
+void zend_attribute_validate_phpcompilerattribute(zend_attribute *attr, int target)
 {
 	zend_error(E_COMPILE_ERROR, "The PhpCompilerAttribute can only be used by internal classes, use PhpAttribute instead");
 }

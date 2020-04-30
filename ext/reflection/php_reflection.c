@@ -139,8 +139,8 @@ typedef struct _type_reference {
 
 /* Struct for attributes */
 typedef struct _attribute_reference {
-	zend_string *name;
-	zval arguments;
+	zend_attribute *data;
+	zend_class_entry *scope;
 } attribute_reference;
 
 typedef enum {
@@ -225,7 +225,6 @@ static void reflection_free_objects_storage(zend_object *object) /* {{{ */
 	reflection_object *intern = reflection_object_from_obj(object);
 	parameter_reference *reference;
 	property_reference *prop_reference;
-	attribute_reference *attr_reference;
 
 	if (intern->ptr) {
 		switch (intern->ref_type) {
@@ -252,10 +251,7 @@ static void reflection_free_objects_storage(zend_object *object) /* {{{ */
 			efree(intern->ptr);
 			break;
 		case REF_TYPE_ATTRIBUTE:
-			attr_reference = (attribute_reference*)intern->ptr;
-			zend_string_release(attr_reference->name);
-			zval_ptr_dtor(&attr_reference->arguments);
-			efree(attr_reference);
+			efree(intern->ptr);
 			break;
 		case REF_TYPE_GENERATOR:
 		case REF_TYPE_CLASS_CONSTANT:
@@ -1081,7 +1077,7 @@ static void _extension_string(smart_str *str, zend_module_entry *module, char *i
 /* }}} */
 
 /* {{{ reflection_attribute_factory */
-static void reflection_attribute_factory(zval *object, zend_string *name, zval *arguments)
+static void reflection_attribute_factory(zval *object, zend_attribute *data, zend_class_entry *scope)
 {
 	reflection_object *intern;
 	attribute_reference *reference;
@@ -1089,145 +1085,67 @@ static void reflection_attribute_factory(zval *object, zend_string *name, zval *
 	reflection_instantiate(reflection_attribute_ptr, object);
 	intern  = Z_REFLECTION_P(object);
 	reference = (attribute_reference*) emalloc(sizeof(attribute_reference));
-	reference->name = zend_string_copy(name);
-	ZVAL_COPY(&reference->arguments, arguments);
+	reference->data = data;
+	reference->scope = scope;
 	intern->ptr = reference;
 	intern->ref_type = REF_TYPE_ATTRIBUTE;
 }
 /* }}} */
 
-static int convert_ast_attributes(zval *ret, HashTable *attributes, zend_class_entry *scope_ce) /* {{{ */
+static int read_attributes(zval *ret, HashTable *attributes, zend_class_entry *scope,
+		uint32_t offset, zend_string *name, zend_class_entry *base) /* {{{ */
 {
-	Bucket *p;
+	zend_attribute *attr;
 	zval tmp;
 
-	array_init(ret);
+	if (name) {
+		// Name based filtering using lowercased key.
+		zend_string *filter = zend_string_tolower(name);
 
-	ZEND_HASH_FOREACH_BUCKET(attributes, p) {
-		if (!p->key && p->h == 0) {
+		ZEND_HASH_FOREACH_PTR(attributes, attr) {
+			if (attr->offset == offset && zend_string_equals(attr->lcname, filter)) {
+				reflection_attribute_factory(&tmp, attr, scope);
+				add_next_index_zval(ret, &tmp);
+			}
+		} ZEND_HASH_FOREACH_END();
+
+		zend_string_release(filter);
+		return SUCCESS;
+	}
+
+	ZEND_HASH_FOREACH_PTR(attributes, attr) {
+		if (attr->offset != offset) {
 			continue;
 		}
 
-		if (Z_TYPE(p->val) == IS_CONSTANT_AST) {
-			tmp = p->val;
+		if (base) {
+			// Base type filtering.
+			zend_class_entry *ce = zend_lookup_class_ex(attr->name, attr->lcname, 0);
 
-			if (FAILURE == zval_update_constant_ex(&tmp, scope_ce)) {
-				return FAILURE;
+			if (ce == NULL) {
+				// Bailout on error, otherwise ignore unavailable class.
+				if (EG(exception)) {
+					return FAILURE;
+				}
+
+				continue;
 			}
 
-			add_next_index_zval(ret, &tmp);
-		} else {
-			Z_TRY_ADDREF(p->val);
-			add_next_index_zval(ret, &p->val);
+			if (!instanceof_function(ce, base)) {
+				continue;
+			}
 		}
+
+		reflection_attribute_factory(&tmp, attr, scope);
+		add_next_index_zval(ret, &tmp);
 	} ZEND_HASH_FOREACH_END();
 
 	return SUCCESS;
 }
 /* }}} */
 
-static int load_attributes(zval *ret, HashTable *attr, zend_class_entry *scope) /* {{{ */
-{
-	zval obj;
-	zval result;
-
-	zval *v = zend_hash_index_find(attr, 0);
-
-	if (Z_TYPE_P(v) == IS_STRING) {
-		if (FAILURE == convert_ast_attributes(&result, attr, scope)) {
-			zval_ptr_dtor(ret);
-			return FAILURE;
-		}
-
-		reflection_attribute_factory(&obj, Z_STR_P(v), &result);
-		add_next_index_zval(ret, &obj);
-		zval_ptr_dtor(&result);
-	} else {
-		zval *zv;
-
-		ZEND_ASSERT(Z_TYPE_P(v) == IS_ARRAY);
-
-		ZEND_HASH_FOREACH_VAL(attr, zv) {
-			ZEND_ASSERT(Z_TYPE_P(zv) == IS_ARRAY);
-
-			if (FAILURE == convert_ast_attributes(&result, Z_ARRVAL_P(zv), scope)) {
-				zval_ptr_dtor(ret);
-				return FAILURE;
-			}
-
-			reflection_attribute_factory(&obj, Z_STR_P(zend_hash_index_find(Z_ARRVAL_P(zv), 0)), &result);
-			add_next_index_zval(ret, &obj);
-			zval_ptr_dtor(&result);
-		} ZEND_HASH_FOREACH_END();
-	}
-
-	return SUCCESS;
-}
-/* }}} */
-
-static int convert_attributes(zval *ret, HashTable *attributes, zend_class_entry *scope,
-		zend_string *name, zend_class_entry *base) /* {{{ */
-{
-	Bucket *p;
-
-	array_init(ret);
-
-	if (name) {
-		// Name based filtering using lowercased key.
-		zend_string *filter = zend_string_tolower(name);
-		zval *x = zend_hash_find(attributes, filter);
-
-		zend_string_release(filter);
-
-		if (x) {
-			ZEND_ASSERT(Z_TYPE_P(x) == IS_ARRAY);
-
-			load_attributes(ret, Z_ARRVAL_P(x), scope);
-		}
-	} else {
-		ZEND_HASH_FOREACH_BUCKET(attributes, p) {
-			if (!p->key) {
-				// Skip inlined parameter attributes.
-				continue;
-			}
-
-			ZEND_ASSERT(Z_TYPE(p->val) == IS_ARRAY);
-
-			if (base) {
-				// Base type filtering.
-				zval *x = zend_hash_index_find(Z_ARRVAL(p->val), 0);
-				zend_class_entry *ce;
-
-				if (Z_TYPE_P(x) == IS_STRING) {
-					ce = zend_lookup_class_ex(Z_STR_P(x), p->key, 0);
-				} else {
-					ZEND_ASSERT(Z_TYPE_P(x) == IS_ARRAY);
-					ce = zend_lookup_class_ex(Z_STR_P(zend_hash_index_find(Z_ARRVAL_P(x), 0)), p->key, 0);
-				}
-
-				if (ce == NULL) {
-					// Bailout on error, otherwise ignore unavailable class.
-					if (EG(exception)) {
-						return FAILURE;
-					}
-
-					continue;
-				}
-
-				if (!instanceof_function(ce, base)) {
-					continue;
-				}
-			}
-
-			load_attributes(ret, Z_ARRVAL(p->val), scope);
-		} ZEND_HASH_FOREACH_END();
-	}
-
-	return SUCCESS;
-}
-/* }}} */
-
-static void reflect_attributes(INTERNAL_FUNCTION_PARAMETERS, HashTable *attributes, zend_class_entry *scope) /* {{{ */
+static void reflect_attributes(INTERNAL_FUNCTION_PARAMETERS, HashTable *attributes,
+		uint32_t offset, zend_class_entry *scope) /* {{{ */
 {
 	zval ret;
 
@@ -1260,7 +1178,10 @@ static void reflect_attributes(INTERNAL_FUNCTION_PARAMETERS, HashTable *attribut
 		RETURN_EMPTY_ARRAY();
 	}
 
-	if (FAILURE == convert_attributes(&ret, attributes, scope, name, base)) {
+	array_init(&ret);
+
+	if (FAILURE == read_attributes(&ret, attributes, scope, offset, name, base)) {
+		zval_ptr_dtor(&ret);
 		RETURN_THROWS();
 	}
 
@@ -1861,7 +1782,7 @@ ZEND_METHOD(ReflectionFunctionAbstract, getAttributes)
 		scope = fptr->common.scope;
 	}
 
-	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, scope);
+	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, 0, scope);
 }
 /* }}} */
 
@@ -2803,17 +2724,11 @@ ZEND_METHOD(ReflectionParameter, getAttributes)
 	GET_REFLECTION_OBJECT_PTR(param);
 
 	if (param->fptr->type == ZEND_USER_FUNCTION && param->fptr->op_array.attributes) {
-		zval *attr;
-
-		if (NULL != (attr = zend_hash_index_find(param->fptr->op_array.attributes, param->offset))) {
-			ZEND_ASSERT(Z_TYPE_P(attr) == IS_ARRAY);
-
-			attributes = Z_ARRVAL_P(attr);
-			scope = param->fptr->common.scope;
-		}
+		attributes = param->fptr->op_array.attributes;
+		scope = param->fptr->common.scope;
 	}
 
-	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, scope);
+	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, param->offset + 1, scope);
 }
 
 /* {{{ proto public bool ReflectionParameter::getPosition()
@@ -3888,7 +3803,7 @@ ZEND_METHOD(ReflectionClassConstant, getAttributes)
 		scope = ref->ce;
 	}
 
-	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, scope);
+	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, 0, scope);
 }
 /* }}} */
 
@@ -4276,7 +4191,7 @@ ZEND_METHOD(ReflectionClass, getAttributes)
 		scope = ce;
 	}
 
-	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, scope);
+	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, 0, scope);
 }
 /* }}} */
 
@@ -5797,7 +5712,7 @@ ZEND_METHOD(ReflectionProperty, getAttributes)
 		scope = ref->prop->ce;
 	}
 
-	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, scope);
+	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, 0, scope);
 }
 /* }}} */
 
@@ -6532,7 +6447,23 @@ ZEND_METHOD(ReflectionAttribute, getName)
 	}
 	GET_REFLECTION_OBJECT_PTR(attr);
 
-	RETURN_STR_COPY(attr->name);
+	RETURN_STR_COPY(attr->data->name);
+}
+/* }}} */
+
+static int import_attribute_value(zval *ret, zval *val, zend_class_entry *scope) /* {{{ */
+{
+	if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
+		*ret = *val;
+
+		if (FAILURE == zval_update_constant_ex(ret, scope)) {
+			return FAILURE;
+		}
+	} else {
+		ZVAL_COPY_OR_DUP(ret, val);
+	}
+
+	return SUCCESS;
 }
 /* }}} */
 
@@ -6543,12 +6474,27 @@ ZEND_METHOD(ReflectionAttribute, getArguments)
 	reflection_object *intern;
 	attribute_reference *attr;
 
+	zval ret;
+	zval tmp;
+	uint32_t i;
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
 	}
 	GET_REFLECTION_OBJECT_PTR(attr);
 
-	RETURN_COPY(&attr->arguments);
+	array_init(&ret);
+
+	for (i = 0; i < attr->data->argc; i++) {
+		if (FAILURE == import_attribute_value(&tmp, &attr->data->argv[i], attr->scope)) {
+			zval_ptr_dtor(&ret);
+			RETURN_THROWS();
+		}
+
+		add_next_index_zval(&ret, &tmp);
+	}
+
+	RETURN_ZVAL(&ret, 1, 1);
 }
 /* }}} */
 
@@ -6624,7 +6570,6 @@ ZEND_METHOD(ReflectionAttribute, newInstance)
 	attribute_reference *attr;
 
 	zend_class_entry *ce;
-	zend_string *lcname;
 	zval obj;
 
 	zval *args = NULL;
@@ -6637,40 +6582,34 @@ ZEND_METHOD(ReflectionAttribute, newInstance)
 
 	GET_REFLECTION_OBJECT_PTR(attr);
 
-	if (NULL == (ce = zend_lookup_class(attr->name))) {
-		zend_throw_error(NULL, "Attribute class '%s' not found", ZSTR_VAL(attr->name));
+	if (NULL == (ce = zend_lookup_class(attr->data->name))) {
+		zend_throw_error(NULL, "Attribute class '%s' not found", ZSTR_VAL(attr->data->name));
 		RETURN_THROWS();
 	}
 
-	lcname = zend_string_tolower(ce->name);
-
-	if (ce->type == ZEND_USER_CLASS && (!ce->info.user.attributes || !zend_hash_str_exists(ce->info.user.attributes, ZEND_STRL("phpattribute")))) {
-		zend_string_release(lcname);
-		zend_throw_error(NULL, "Attempting to use class '%s' as attribute that does not have <<PhpAttribute>>.", ZSTR_VAL(attr->name));
+	if (ce->type == ZEND_USER_CLASS && !zend_has_attribute_str(ce->info.user.attributes, ZEND_STRL("phpattribute"), 0)) {
+		zend_throw_error(NULL, "Attempting to use class '%s' as attribute that does not have <<PhpAttribute>>.", ZSTR_VAL(attr->data->name));
 		RETURN_THROWS();
-	} else if (ce->type == ZEND_INTERNAL_CLASS && zend_hash_exists(&zend_attributes_internal_validators, lcname) == 0) {
-		zend_string_release(lcname);
-		zend_throw_error(NULL, "Attempting to use internal class '%s' as attribute that does not have <<PhpCompilerAttribute>>.", ZSTR_VAL(attr->name));
+	} else if (ce->type == ZEND_INTERNAL_CLASS && zend_hash_exists(&zend_attributes_internal_validators, attr->data->lcname) == 0) {
+		zend_throw_error(NULL, "Attempting to use internal class '%s' as attribute that does not have <<PhpCompilerAttribute>>.", ZSTR_VAL(attr->data->name));
 		RETURN_THROWS();
 	}
-
-	zend_string_release(lcname);
 
 	if (SUCCESS != object_init_ex(&obj, ce)) {
 		RETURN_THROWS();
 	}
 
-	count = zend_hash_num_elements(Z_ARRVAL(attr->arguments));
+	count = attr->data->argc;
 
 	if (count) {
-		Bucket *p;
-
 		args = emalloc(count * sizeof(zval));
 
-		ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL(attr->arguments), p) {
-			ZVAL_COPY(&args[argc], &p->val);
-			argc++;
-		} ZEND_HASH_FOREACH_END();
+		for (argc = 0; argc < attr->data->argc; argc++) {
+			if (FAILURE == import_attribute_value(&args[argc], &attr->data->argv[argc], attr->scope)) {
+				attribute_ctor_cleanup(&obj, args, argc);
+				RETURN_THROWS();
+			}
+		}
 	}
 
 	if (ce->constructor) {
