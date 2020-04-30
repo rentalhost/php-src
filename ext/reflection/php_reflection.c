@@ -6451,7 +6451,7 @@ ZEND_METHOD(ReflectionAttribute, getName)
 }
 /* }}} */
 
-static int import_attribute_value(zval *ret, zval *val, zend_class_entry *scope) /* {{{ */
+static zend_always_inline int import_attribute_value(zval *ret, zval *val, zend_class_entry *scope) /* {{{ */
 {
 	if (Z_TYPE_P(val) == IS_CONSTANT_AST) {
 		*ret = *val;
