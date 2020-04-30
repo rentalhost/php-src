@@ -5722,10 +5722,10 @@ static void zend_compile_attribute(zval *v, zend_ast *ast) /* {{{ */
 	ZEND_ASSERT(ast->kind == ZEND_AST_ATTRIBUTE);
 
 	array_init_size(v, 1 + (ast->child[1] ? zend_ast_get_list(ast->child[1])->children : 0));
-	add_next_index_str(v, zend_resolve_class_name(zend_ast_get_str(ast->child[0]), ZEND_NAME_NOT_FQ));
+	add_next_index_str(v, zend_resolve_class_name_ast(ast->child[0]));
 
 	if (ast->child[1]) {
-		zend_ast_list *list;
+		zend_ast_list *list = zend_ast_get_list(ast->child[1]);
 		uint32_t i;
 		zval tmp;
 
@@ -5733,7 +5733,7 @@ static void zend_compile_attribute(zval *v, zend_ast *ast) /* {{{ */
 
 		ZVAL_NULL(&tmp);
 
-		for (list = zend_ast_get_list(ast->child[1]), i = 0; i < list->children; i++) {
+		for (i = 0; i < list->children; i++) {
 			zend_const_expr_to_zval(zend_hash_next_index_insert(Z_ARRVAL_P(v), &tmp), list->child[i]);
 		}
 	}
@@ -5744,11 +5744,10 @@ static HashTable *zend_compile_attributes(zend_ast *ast, int target) /* {{{ */
 {
 	HashTable *attr;
 
-	zend_ast_list *list;
+	zend_ast_list *list = zend_ast_get_list(ast);
 	uint32_t i;
 
 	zval tmp;
-	zend_attributes_internal_validator validator = NULL;
 
 	ZVAL_NULL(&tmp);
 
@@ -5757,7 +5756,7 @@ static HashTable *zend_compile_attributes(zend_ast *ast, int target) /* {{{ */
 	ALLOC_HASHTABLE(attr);
 	zend_hash_init(attr, zend_ast_get_list(ast)->children, NULL, ZVAL_PTR_DTOR, 0);
 
-	for (list = zend_ast_get_list(ast), i = 0; i < list->children; i++) {
+	for (i = 0; i < list->children; i++) {
 		zend_ast *el = list->child[i];
 		zend_string *name;
 
@@ -5769,8 +5768,8 @@ static HashTable *zend_compile_attributes(zend_ast *ast, int target) /* {{{ */
 		name = zend_string_tolower(Z_STR_P(zend_hash_index_find(Z_ARRVAL(a), 0)));
 		x = zend_hash_find(attr, name);
 
-		// validate internal attribute
-		validator = (zend_attributes_internal_validator)zend_hash_find_ptr(&zend_attributes_internal_validators, name);
+		// Validate internal attribute
+		zend_attributes_internal_validator validator = zend_hash_find_ptr(&zend_attributes_internal_validators, name);
 
 		if (validator != NULL) {
 			validator(&a, target);
@@ -6559,7 +6558,7 @@ void zend_compile_prop_group(zend_ast *list) /* {{{ */
 	zend_compile_prop_decl(prop_ast, type_ast, list->attr, attributes);
 
 	if (attributes) {
-		zend_array_ptr_dtor(attributes);
+		zend_array_release(attributes);
 	}
 }
 /* }}} */
@@ -6612,7 +6611,7 @@ void zend_compile_class_const_decl(zend_ast *ast, zend_ast *attr_ast) /* {{{ */
 	}
 
 	if (attributes) {
-		zend_array_ptr_dtor(attributes);
+		zend_array_release(attributes);
 	}
 }
 /* }}} */

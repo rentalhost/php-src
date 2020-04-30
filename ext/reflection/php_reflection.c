@@ -1096,32 +1096,6 @@ static void reflection_attribute_factory(zval *object, zend_string *name, zval *
 }
 /* }}} */
 
-static int convert_ast_to_zval(zval *ret, zend_ast *ast, zend_class_entry *scope_ce) /* {{{ */
-{
-	if (ast->kind == ZEND_AST_CONSTANT) {
-		zend_string *name = zend_ast_get_constant_name(ast);
-		zval *zv = zend_get_constant_ex(name, scope_ce, ast->attr);
-
-		if (UNEXPECTED(zv == NULL)) {
-			return FAILURE;
-		}
-
-		ZVAL_COPY_OR_DUP(ret, zv);
-	} else {
-		zval tmp;
-
-		if (UNEXPECTED(zend_ast_evaluate(&tmp, ast, scope_ce) != SUCCESS)) {
-			return FAILURE;
-		}
-
-		ZVAL_COPY_OR_DUP(ret, &tmp);
-		zval_ptr_dtor(&tmp);
-	}
-
-	return SUCCESS;
-}
-/* }}} */
-
 static int convert_ast_attributes(zval *ret, HashTable *attributes, zend_class_entry *scope_ce) /* {{{ */
 {
 	Bucket *p;
@@ -1135,7 +1109,9 @@ static int convert_ast_attributes(zval *ret, HashTable *attributes, zend_class_e
 		}
 
 		if (Z_TYPE(p->val) == IS_CONSTANT_AST) {
-			if (FAILURE == convert_ast_to_zval(&tmp, Z_ASTVAL(p->val), scope_ce)) {
+			tmp = p->val;
+
+			if (FAILURE == zval_update_constant_ex(&tmp, scope_ce)) {
 				return FAILURE;
 			}
 
@@ -6572,7 +6548,7 @@ ZEND_METHOD(ReflectionAttribute, getArguments)
 	}
 	GET_REFLECTION_OBJECT_PTR(attr);
 
-	RETURN_ZVAL(&attr->arguments, 1, 0);
+	RETURN_COPY(&attr->arguments);
 }
 /* }}} */
 
@@ -6582,8 +6558,6 @@ static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zv
 	zend_fcall_info_cache fcc;
 
 	zend_function *ctor;
-	zend_class_entry *scope;
-
 	zval retval;
 	int ret;
 
@@ -6608,12 +6582,7 @@ static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zv
 	fcc.called_scope = ce;
 	fcc.object = obj;
 
-	scope = EG(fake_scope);
-	EG(fake_scope) = NULL;
-
 	ret = zend_call_function(&fci, &fcc);
-
-	EG(fake_scope) = scope;
 
 	if (EG(exception)) {
 		zend_object_store_ctor_failed(obj);

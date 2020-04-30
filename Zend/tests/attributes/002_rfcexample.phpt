@@ -30,6 +30,7 @@ namespace {
     var_dump($attributes[0]->getArguments());
     var_dump($attributes[0]->newInstance());
 }
+?>
 --EXPECTF--
 string(28) "My\Attributes\SingleArgument"
 array(1) {

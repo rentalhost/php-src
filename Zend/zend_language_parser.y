@@ -227,7 +227,7 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 /* Token used to force a parse error from the lexer */
 %token T_ERROR
 
-%type <ast> top_statement namespace_name name statement annotated_statement function_declaration_statement
+%type <ast> top_statement namespace_name name statement function_declaration_statement
 %type <ast> class_declaration_statement trait_declaration_statement
 %type <ast> interface_declaration_statement interface_extends_list
 %type <ast> group_use_declaration inline_use_declarations inline_use_declaration
@@ -235,8 +235,8 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 %type <ast> unprefixed_use_declarations const_decl inner_statement
 %type <ast> expr optional_expr while_statement for_statement foreach_variable
 %type <ast> foreach_statement declare_statement finally_statement unset_variable variable
-%type <ast> extends_from annotated_parameter parameter optional_type_without_static argument global_var
-%type <ast> static_var class_statement annotated_class_statement trait_adaptation trait_precedence trait_alias
+%type <ast> extends_from parameter optional_type_without_static argument global_var
+%type <ast> static_var class_statement trait_adaptation trait_precedence trait_alias
 %type <ast> absolute_trait_method_reference trait_method_reference property echo_expr
 %type <ast> new_expr anonymous_class class_name class_name_reference simple_variable
 %type <ast> internal_functions_in_yacc
@@ -257,6 +257,7 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 %type <ast> isset_variable type return_type type_expr type_without_static
 %type <ast> identifier type_expr_without_static union_type_without_static
 %type <ast> inline_function union_type
+%type <ast> annotated_statement annotated_class_statement annotated_parameter
 %type <ast> attribute_arguments attribute_decl attribute attributes
 
 %type <num> returns_ref function fn is_reference is_variadic variable_modifiers
