@@ -25,6 +25,7 @@
 #include "zend_extensions.h"
 #include "zend_shared_alloc.h"
 #include "zend_operators.h"
+#include "zend_attributes.h"
 
 #define ADD_DUP_SIZE(m,s)  ZCG(current_persistent_script)->size += zend_shared_memdup_size((void*)m, s)
 #define ADD_SIZE(m)        ZCG(current_persistent_script)->size += ZEND_ALIGNED_SIZE(m)
@@ -52,21 +53,6 @@
 			} \
 		} \
 	} while (0)
-
-#define zend_persist_attributes_calc(attr) do { \
-	if (!zend_shared_alloc_get_xlat_entry(attr)) { \
-		Bucket *p; \
-		zend_shared_alloc_register_xlat_entry((attr), (attr)); \
-		ADD_SIZE(sizeof(HashTable)); \
-		zend_hash_persist_calc(attr); \
-		ZEND_HASH_FOREACH_BUCKET((attr), p) { \
-			if (p->key) { \
-				ADD_INTERNED_STRING(p->key); \
-			} \
-			zend_persist_zval_calc(&p->val); \
-		} ZEND_HASH_FOREACH_END(); \
-	} \
-} while (0)
 
 static void zend_persist_zval_calc(zval *z);
 
@@ -160,6 +146,28 @@ static void zend_persist_zval_calc(zval *z)
 			ZEND_ASSERT(Z_TYPE_P(z) != IS_OBJECT);
 			ZEND_ASSERT(Z_TYPE_P(z) != IS_RESOURCE);
 			break;
+	}
+}
+
+static void zend_persist_attributes_calc(HashTable *attributes)
+{
+	if (!zend_shared_alloc_get_xlat_entry(attributes)) {
+		zend_attribute *attr;
+		uint32_t i;
+
+		zend_shared_alloc_register_xlat_entry(attributes, attributes);
+		ADD_SIZE(sizeof(HashTable));
+		zend_hash_persist_calc(attributes);
+
+		ZEND_HASH_FOREACH_PTR(attributes, attr) {
+			ADD_SIZE(ZEND_ATTRIBUTE_SIZE(attr->argc));
+			ADD_INTERNED_STRING(attr->name);
+			ADD_INTERNED_STRING(attr->lcname);
+
+			for (i = 0; i < attr->argc; i++) {
+				zend_persist_zval_calc(&attr->argv[i]);
+			}
+		} ZEND_HASH_FOREACH_END();
 	}
 }
 

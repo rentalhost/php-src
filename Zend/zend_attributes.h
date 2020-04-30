@@ -12,6 +12,8 @@
 zend_class_entry *zend_ce_php_attribute;
 zend_class_entry *zend_ce_php_compiler_attribute;
 
+#define ZEND_ATTRIBUTE_SIZE(argc) (sizeof(zend_attribute) + sizeof(zval) * (argc) - sizeof(zval))
+
 typedef struct _zend_attribute {
 	zend_string *name;
 	zend_string *lcname;
@@ -19,6 +21,20 @@ typedef struct _zend_attribute {
 	uint32_t argc;
 	zval argv[1];
 } zend_attribute;
+
+static zend_always_inline void zend_attribute_release(zend_attribute *attr)
+{
+	uint32_t i;
+
+	zend_string_release(attr->name);
+	zend_string_release(attr->lcname);
+
+	for (i = 0; i < attr->argc; i++) {
+		zval_ptr_dtor(&attr->argv[i]);
+	}
+
+	efree(attr);
+}
 
 static zend_always_inline zend_bool zend_has_attribute(HashTable *attributes, zend_string *name, uint32_t offset)
 {

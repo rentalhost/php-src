@@ -5722,7 +5722,7 @@ static zend_attribute *zend_compile_attribute(zend_ast *ast, uint32_t offset) /*
 	ZEND_ASSERT(ast->kind == ZEND_AST_ATTRIBUTE);
 
 	zend_ast_list *list = ast->child[1] ? zend_ast_get_list(ast->child[1]) : NULL;
-	zend_attribute *attr = emalloc(sizeof(zend_attribute) + sizeof(zval) * (list ? list->children : 0));
+	zend_attribute *attr = emalloc(ZEND_ATTRIBUTE_SIZE(list ? list->children : 0));
 
 	attr->name = zend_resolve_class_name_ast(ast->child[0]);
 	attr->lcname = zend_string_tolower(attr->name);
@@ -5743,21 +5743,10 @@ static zend_attribute *zend_compile_attribute(zend_ast *ast, uint32_t offset) /*
 }
 /* }}} */
 
-static void attribute_ptr_dtor(zval *v) /* {{{ */
+static void attribute_ptr_dtor(zval *v)
 {
-	zend_attribute *attr = Z_PTR_P(v);
-	uint32_t i;
-
-	zend_string_release(attr->name);
-	zend_string_release(attr->lcname);
-
-	for (i = 0; i < attr->argc; i++) {
-		zval_ptr_dtor(&attr->argv[i]);
-	}
-
-	efree(attr);
+	zend_attribute_release((zend_attribute *) Z_PTR_P(v));
 }
-/* }}} */
 
 static zend_always_inline HashTable *create_attribute_array(uint32_t size) /* {{{ */
 {
