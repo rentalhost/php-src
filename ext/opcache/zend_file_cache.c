@@ -21,6 +21,7 @@
 #include "zend_compile.h"
 #include "zend_vm.h"
 #include "zend_interfaces.h"
+#include "zend_attributes.h"
 
 #include "php.h"
 #ifdef ZEND_WIN32
@@ -158,22 +159,22 @@ static int zend_file_cache_flock(int fd, int type)
 		} \
 	} while (0)
 
-#define SERIALIZE_ATTRIBUTES(attr) do { \
-	if ((attr) && !IS_SERIALIZED(attr)) { \
+#define SERIALIZE_ATTRIBUTES(attributes) do { \
+	if ((attributes) && !IS_SERIALIZED(attributes)) { \
 		HashTable *ht; \
-		SERIALIZE_PTR(attr); \
-		ht = (attr); \
+		SERIALIZE_PTR(attributes); \
+		ht = (attributes); \
 		UNSERIALIZE_PTR(ht); \
-		zend_file_cache_serialize_hash(ht, script, info, buf, zend_file_cache_serialize_zval); \
+		zend_file_cache_serialize_hash(ht, script, info, buf, zend_file_cache_serialize_attribute); \
 	} \
 } while (0)
 
-#define UNSERIALIZE_ATTRIBUTES(attr) do { \
-	if ((attr) && !IS_UNSERIALIZED(attr)) { \
+#define UNSERIALIZE_ATTRIBUTES(attributes) do { \
+	if ((attributes) && !IS_UNSERIALIZED(attributes)) { \
 		HashTable *ht; \
-		UNSERIALIZE_PTR(attr); \
-		ht = (attr); \
-		zend_file_cache_unserialize_hash(ht, script, buf, zend_file_cache_unserialize_zval, ZVAL_PTR_DTOR); \
+		UNSERIALIZE_PTR(attributes); \
+		ht = (attributes); \
+		zend_file_cache_unserialize_hash(ht, script, buf, zend_file_cache_unserialize_attribute, NULL); \
 	} \
 } while (0)
 
@@ -387,6 +388,33 @@ static void zend_file_cache_serialize_zval(zval                     *zv,
 				zend_file_cache_serialize_ast(GC_AST(ast), script, info, buf);
 			}
 			break;
+	}
+}
+
+static void zend_file_cache_serialize_attribute(zval                     *zv,
+                                                zend_persistent_script   *script,
+                                                zend_file_cache_metainfo *info,
+                                                void                     *buf)
+{
+	if (!IS_SERIALIZED(Z_PTR_P(zv))) {
+		zend_attribute *attr = Z_PTR_P(zv);
+		uint32_t i;
+
+		SERIALIZE_PTR(Z_PTR_P(zv));
+		attr = Z_PTR_P(zv);
+		UNSERIALIZE_PTR(attr);
+
+		if (!IS_SERIALIZED(attr->name)) {
+			SERIALIZE_STR(attr->name);
+		}
+
+		if (!IS_SERIALIZED(attr->lcname)) {
+			SERIALIZE_STR(attr->lcname);
+		}
+
+		for (i = 0; i < attr->argc; i++) {
+			zend_file_cache_serialize_zval(&attr->argv[i], script, info, buf);
+		}
 	}
 }
 
@@ -613,7 +641,6 @@ static void zend_file_cache_serialize_prop_info(zval                     *zv,
 				SERIALIZE_STR(prop->doc_comment);
 			}
 			SERIALIZE_ATTRIBUTES(prop->attributes);
-
 			zend_file_cache_serialize_type(&prop->type, script, info, buf);
 		}
 	}
@@ -1115,6 +1142,29 @@ static void zend_file_cache_unserialize_zval(zval                    *zv,
 				zend_file_cache_unserialize_ast(Z_ASTVAL_P(zv), script, buf);
 			}
 			break;
+	}
+}
+
+static void zend_file_cache_unserialize_attribute(zval *zv, zend_persistent_script *script, void *buf)
+{
+	if (!IS_UNSERIALIZED(Z_PTR_P(zv))) {
+		zend_attribute *attr;
+		uint32_t i;
+
+		UNSERIALIZE_PTR(Z_PTR_P(zv));
+		attr = Z_PTR_P(zv);
+
+		if (!IS_UNSERIALIZED(attr->name)) {
+			UNSERIALIZE_STR(attr->name);
+		}
+
+		if (!IS_UNSERIALIZED(attr->lcname)) {
+			UNSERIALIZE_STR(attr->lcname);
+		}
+
+		for (i = 0; i < attr->argc; i++) {
+			zend_file_cache_unserialize_zval(&attr->argv[i], script, buf);
+		}
 	}
 }
 
