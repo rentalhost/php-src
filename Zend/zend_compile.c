@@ -5769,7 +5769,7 @@ static void zend_compile_attributes(HashTable *attributes, zend_ast *ast, uint32
 	ZEND_ASSERT(ast->kind == ZEND_AST_ATTRIBUTE_LIST);
 
 	for (i = 0; i < list->children; i++) {
-		zend_attribute *attr = zend_compile_attribute(list->child[i], 0);
+		zend_attribute *attr = zend_compile_attribute(list->child[i], offset);
 
 		// Validate internal attribute
 		zend_attributes_internal_validator validator = zend_hash_find_ptr(&zend_attributes_internal_validators, attr->lcname);

@@ -43,68 +43,83 @@ $sources = [
 ];
 
 foreach ($sources as $r) {
-    foreach ($r->getAttributes() as $attr) {
-        var_dump($attr->getName(), $attr->getArguments());
+	$attr = $r->getAttributes();
+	var_dump(count($attr));
+	
+    foreach ($attr as $a) {
+        var_dump($a->getName(), $a->getArguments());
     }
 }
 
 ?>
 --EXPECT--
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(1)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(2)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(2)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(3)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(3)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(4)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(5)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(6)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(7)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(8)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
   int(9)
 }
+int(1)
 string(2) "A1"
 array(1) {
   [0]=>
