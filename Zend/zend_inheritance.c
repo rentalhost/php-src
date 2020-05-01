@@ -2046,7 +2046,10 @@ static void zend_do_traits_property_binding(zend_class_entry *ce, zend_class_ent
 			doc_comment = property_info->doc_comment ? zend_string_copy(property_info->doc_comment) : NULL;
 			if (property_info->attributes) {
 				attributes = property_info->attributes;
-				GC_ADDREF(attributes);
+
+				if (!(GC_FLAGS(attributes) & IS_ARRAY_IMMUTABLE)) {
+					GC_ADDREF(attributes);
+				}
 			}
 			zend_type_copy_ctor(&property_info->type, /* persistent */ 0);
 			zend_declare_typed_property(ce, prop_name, prop_value, flags, doc_comment, attributes, property_info->type);

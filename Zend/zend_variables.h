@@ -48,7 +48,7 @@ static zend_always_inline void i_zval_ptr_dtor(zval *zval_ptr)
 	}
 }
 
-static zend_always_inline void zend_array_ptr_dtor(zend_array *array)
+static zend_always_inline void zend_array_release(zend_array *array)
 {
 	if (!(GC_FLAGS(array) & IS_ARRAY_IMMUTABLE)) {
 		if (GC_DELREF(array) == 0) {

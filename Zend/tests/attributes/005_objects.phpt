@@ -3,6 +3,7 @@ Attributes can be converted into objects.
 --FILE--
 <?php
 
+<<PhpAttribute>>
 class A1
 {
 	public string $name;
@@ -55,6 +56,7 @@ try {
 
 echo "\n";
 
+<<PhpAttribute>>
 class A3
 {
 	private function __construct() { }
@@ -70,6 +72,7 @@ try {
 
 echo "\n";
 
+<<PhpAttribute>>
 class A4 { }
 
 $ref = new \ReflectionFunction(<<A4(1)>> function () { });
@@ -78,6 +81,18 @@ try {
 	$ref->getAttributes()[0]->newInstance();
 } catch (\Error $e) {
 	var_dump('ERROR 5', $e->getMessage());
+}
+
+echo "\n";
+
+class A5 { }
+
+$ref = new \ReflectionFunction(<<A5>> function () { });
+
+try {
+	$ref->getAttributes()[0]->newInstance();
+} catch (\Error $e) {
+	var_dump('ERROR 6', $e->getMessage());
 }
 
 ?>
@@ -100,3 +115,6 @@ string(50) "Attribute constructor of class 'A3' must be public"
 
 string(7) "ERROR 5"
 string(71) "Attribute class 'A4' does not have a constructor, cannot pass arguments"
+
+string(7) "ERROR 6"
+string(78) "Attempting to use class 'A5' as attribute that does not have <<PhpAttribute>>."

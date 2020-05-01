@@ -26,6 +26,7 @@ namespace Foo {
 namespace {
     dump_attributes((new ReflectionFunction('Foo\foo'))->getAttributes());
 }
+?>
 --EXPECTF--
 array(1) {
   ["Doctrine\ORM\Mapping\Entity"]=>

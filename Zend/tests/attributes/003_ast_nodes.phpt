@@ -50,10 +50,36 @@ var_dump(count($args));
 var_dump($args[0] === 'foo');
 var_dump($args[1] === C1::BAR);
 
+echo "\n";
+
 <<ExampleWithShift(4 >> 1)>>
 class C4 {}
 $ref = new \ReflectionClass(C4::class);
 var_dump($ref->getAttributes()[0]->getArguments());
+
+echo "\n";
+
+<<PhpAttribute>>
+class C5
+{
+	public function __construct() { }
+}
+
+$ref = new \ReflectionFunction(<<C5(MissingClass::SOME_CONST)>> function () { });
+$attr = $ref->getAttributes();
+var_dump(count($attr));
+
+try {
+	$attr[0]->getArguments();
+} catch (\Error $e) {
+	var_dump($e->getMessage());
+}
+
+try {
+	$attr[0]->newInstance();
+} catch (\Error $e) {
+	var_dump($e->getMessage());
+}
 
 ?>
 --EXPECT--
@@ -71,7 +97,13 @@ int(1)
 int(2)
 bool(true)
 bool(true)
+
 array(1) {
   [0]=>
   int(2)
 }
+
+int(1)
+string(30) "Class 'MissingClass' not found"
+string(30) "Class 'MissingClass' not found"
+
