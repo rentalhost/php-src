@@ -9,10 +9,12 @@
 #define ZEND_ATTRIBUTE_TARGET_PARAMETER		32
 #define ZEND_ATTRIBUTE_TARGET_ALL			63
 
-zend_class_entry *zend_ce_php_attribute;
-zend_class_entry *zend_ce_php_compiler_attribute;
-
 #define ZEND_ATTRIBUTE_SIZE(argc) (sizeof(zend_attribute) + sizeof(zval) * (argc) - sizeof(zval))
+
+BEGIN_EXTERN_C()
+
+extern ZEND_API zend_class_entry *zend_ce_php_attribute;
+extern ZEND_API zend_class_entry *zend_ce_php_compiler_attribute;
 
 typedef struct _zend_attribute {
 	zend_string *name;
@@ -22,7 +24,9 @@ typedef struct _zend_attribute {
 	zval argv[1];
 } zend_attribute;
 
-static zend_always_inline void zend_attribute_release(zend_attribute *attr)
+typedef void (*zend_attributes_internal_validator)(zend_attribute *attr, int target);
+
+static zend_always_inline void zend_attribute_free(zend_attribute *attr)
 {
 	uint32_t i;
 
@@ -36,37 +40,43 @@ static zend_always_inline void zend_attribute_release(zend_attribute *attr)
 	efree(attr);
 }
 
-static zend_always_inline zend_bool zend_has_attribute(HashTable *attributes, zend_string *name, uint32_t offset)
+static zend_always_inline zend_attribute *zend_get_attribute(HashTable *attributes, zend_string *name, uint32_t offset)
 {
 	if (attributes) {
 		zend_attribute *attr;
 
 		ZEND_HASH_FOREACH_PTR(attributes, attr) {
 			if (attr->offset == offset && zend_string_equals(attr->lcname, name)) {
-				return 1;
+				return attr;
 			}
 		} ZEND_HASH_FOREACH_END();
 	}
 
-	return 0;
+	return NULL;
 }
 
-static zend_always_inline zend_bool zend_has_attribute_str(HashTable *attributes, const char *str, size_t len, uint32_t offset)
+static zend_always_inline zend_attribute *zend_get_attribute_str(HashTable *attributes, const char *str, size_t len, uint32_t offset)
 {
-	zend_bool result = 0;
-
 	if (attributes) {
-		zend_string *name = zend_string_init(str, len, 0);
-		result = zend_has_attribute(attributes, name, offset);
-		zend_string_release(name);
+		zend_attribute *attr;
+
+		ZEND_HASH_FOREACH_PTR(attributes, attr) {
+			if (attr->offset == offset && ZSTR_LEN(attr->lcname) == len) {
+				if (0 == memcmp(ZSTR_VAL(attr->lcname), str, len)) {
+					return attr;
+				}
+			}
+		} ZEND_HASH_FOREACH_END();
 	}
 
-	return result;
+	return NULL;
 }
 
-typedef void (*zend_attributes_internal_validator)(zend_attribute *attr, int target);
-HashTable zend_attributes_internal_validators;
+ZEND_API void zend_compiler_attribute_register(zend_class_entry *ce, zend_attributes_internal_validator validator);
+ZEND_API zend_attributes_internal_validator zend_attribute_get_validator(zend_string *lcname);
 
-void zend_compiler_attribute_register(zend_class_entry *ce, zend_attributes_internal_validator validator);
 void zend_register_attribute_ce(void);
+
+END_EXTERN_C()
+
 #endif

@@ -1765,7 +1765,7 @@ ZEND_METHOD(ReflectionFunctionAbstract, getDocComment)
 }
 /* }}} */
 
-/* {{{ proto public array ReflectionFunction::getAttributes()
+/* {{{ proto public array ReflectionFunction::getAttributes([ string name, int flags ])
    Returns the attributes of this function */
 ZEND_METHOD(ReflectionFunctionAbstract, getAttributes)
 {
@@ -2711,7 +2711,7 @@ ZEND_METHOD(ReflectionParameter, canBePassedByValue)
 }
 /* }}} */
 
-/* {{{ proto public bool ReflectionParameter::getAttributes(?string $name = null)
+/* {{{ proto public array ReflectionParameter::getAttributes([ string name, int flags ])
    Get parameter attributes. */
 ZEND_METHOD(ReflectionParameter, getAttributes)
 {
@@ -2731,7 +2731,7 @@ ZEND_METHOD(ReflectionParameter, getAttributes)
 	reflect_attributes(INTERNAL_FUNCTION_PARAM_PASSTHRU, attributes, param->offset + 1, scope);
 }
 
-/* {{{ proto public bool ReflectionParameter::getPosition()
+/* {{{ proto public int ReflectionParameter::getPosition()
    Returns whether this parameter is an optional parameter */
 ZEND_METHOD(ReflectionParameter, getPosition)
 {
@@ -3786,7 +3786,7 @@ ZEND_METHOD(ReflectionClassConstant, getDocComment)
 }
 /* }}} */
 
-/* {{{ proto public array ReflectionClassConstant::getAttributes()
+/* {{{ proto public array ReflectionClassConstant::getAttributes([ string name, int flags ])
    Returns the attributes of this constant */
 ZEND_METHOD(ReflectionClassConstant, getAttributes)
 {
@@ -4174,7 +4174,7 @@ ZEND_METHOD(ReflectionClass, getDocComment)
 }
 /* }}} */
 
-/* {{{ proto public array ReflectionClass::getAttributes()
+/* {{{ proto public array ReflectionClass::getAttributes([ string name, int flags ])
    Returns the attributes for this class */
 ZEND_METHOD(ReflectionClass, getAttributes)
 {
@@ -5695,7 +5695,7 @@ ZEND_METHOD(ReflectionProperty, getDocComment)
 }
 /* }}} */
 
-/* {{{ proto public array ReflectionProperty::getAttributes()
+/* {{{ proto public array ReflectionProperty::getAttributes([ string name, int flags ])
    Returns the attributes of this property */
 ZEND_METHOD(ReflectionProperty, getAttributes)
 {
@@ -6467,7 +6467,7 @@ static zend_always_inline int import_attribute_value(zval *ret, zval *val, zend_
 }
 /* }}} */
 
-/* {{{ proto public string ReflectionAttribute::getArguments()
+/* {{{ proto public array ReflectionAttribute::getArguments()
  *	   Returns the arguments passed to the attribute */
 ZEND_METHOD(ReflectionAttribute, getArguments)
 {
@@ -6562,7 +6562,7 @@ static void attribute_ctor_cleanup(zval *obj, zval *args, uint32_t argc) /* {{{ 
 }
 /* }}} */
 
-/* {{{ proto public string ReflectionAttribute::newInstance()
+/* {{{ proto public object ReflectionAttribute::newInstance()
  *	   Returns the attribute as an object */
 ZEND_METHOD(ReflectionAttribute, newInstance)
 {
@@ -6587,10 +6587,10 @@ ZEND_METHOD(ReflectionAttribute, newInstance)
 		RETURN_THROWS();
 	}
 
-	if (ce->type == ZEND_USER_CLASS && !zend_has_attribute_str(ce->info.user.attributes, ZEND_STRL("phpattribute"), 0)) {
+	if (ce->type == ZEND_USER_CLASS && !zend_get_attribute_str(ce->info.user.attributes, ZEND_STRL("phpattribute"), 0)) {
 		zend_throw_error(NULL, "Attempting to use class '%s' as attribute that does not have <<PhpAttribute>>.", ZSTR_VAL(attr->data->name));
 		RETURN_THROWS();
-	} else if (ce->type == ZEND_INTERNAL_CLASS && zend_hash_exists(&zend_attributes_internal_validators, attr->data->lcname) == 0) {
+	} else if (ce->type == ZEND_INTERNAL_CLASS && !zend_attribute_get_validator(attr->data->lcname)) {
 		zend_throw_error(NULL, "Attempting to use internal class '%s' as attribute that does not have <<PhpCompilerAttribute>>.", ZSTR_VAL(attr->data->name));
 		RETURN_THROWS();
 	}
