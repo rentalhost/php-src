@@ -74,7 +74,8 @@ static zend_always_inline zend_attribute *zend_get_attribute_str(HashTable *attr
 
 ZEND_API void zend_compiler_attribute_register(zend_class_entry *ce, zend_attributes_internal_validator validator);
 ZEND_API zend_attributes_internal_validator zend_attribute_get_validator(zend_string *lcname);
-ZEND_API void zend_register_attribute_ce(void);
+
+void zend_register_attribute_ce(void);
 
 END_EXTERN_C()
 
