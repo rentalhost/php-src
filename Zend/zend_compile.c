@@ -5743,10 +5743,11 @@ static zend_attribute *zend_compile_attribute(zend_ast *ast, uint32_t offset) /*
 }
 /* }}} */
 
-static void attribute_ptr_dtor(zval *v)
+static void attribute_ptr_dtor(zval *v) /* {{{ */
 {
-	zend_attribute_release((zend_attribute *) Z_PTR_P(v));
+	zend_attribute_free((zend_attribute *) Z_PTR_P(v));
 }
+/* }}} */
 
 static zend_always_inline HashTable *create_attribute_array(uint32_t size) /* {{{ */
 {
@@ -5772,7 +5773,7 @@ static void zend_compile_attributes(HashTable *attributes, zend_ast *ast, uint32
 		zend_attribute *attr = zend_compile_attribute(list->child[i], offset);
 
 		// Validate internal attribute
-		zend_attributes_internal_validator validator = zend_hash_find_ptr(&zend_attributes_internal_validators, attr->lcname);
+		zend_attributes_internal_validator validator = zend_attribute_get_validator(attr->lcname);
 
 		if (validator != NULL) {
 			validator(attr, target);
