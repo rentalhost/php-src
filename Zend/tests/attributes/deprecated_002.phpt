@@ -7,4 +7,4 @@
 function test() {
 }
 --EXPECTF--
-Fatal error: <<Deprecated>> first argument $message must be a string in %s
+Fatal error: <<Deprecated>>: Argument #1 ($message) must be of type string, int given in %s

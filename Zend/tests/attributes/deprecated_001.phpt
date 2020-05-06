@@ -15,6 +15,6 @@ function test2() {
 test();
 test2();
 --EXPECTF--
-Deprecated: Function test is deprecated in %s
+Deprecated: Function test() is deprecated in %s
 
-Deprecated: Function test2 is deprecated use test() instead in %s
+Deprecated: Function test2() is deprecated use test() instead in %s

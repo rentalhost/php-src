@@ -6326,10 +6326,23 @@ static void zend_compile_deprecated_func_decl(zend_string *name, zend_op_array *
 	zval fn_name, message, type;
 	zend_ast *name_ast, *args_ast, *call_ast, *message_ast, *type_ast;
 
-	if (deprecated->argc == 0) {
-		deprecation_message = zend_strpprintf(0, "Function %s is deprecated", ZSTR_VAL(name));
-	} else if (deprecated->argc == 1) {
-		deprecation_message = zend_strpprintf(0, "Function %s is deprecated %s", ZSTR_VAL(name), ZSTR_VAL(Z_STR(deprecated->argv[0])));
+	if (op_array->scope) {
+		if (deprecated->argc == 0) {
+			deprecation_message = zend_strpprintf(0, "Method %s::%s() is deprecated", ZSTR_VAL(op_array->scope->name), ZSTR_VAL(name));
+		} else if (deprecated->argc == 1) {
+			deprecation_message = zend_strpprintf(0,
+				"Method %s::%s() is deprecated %s",
+				ZSTR_VAL(op_array->scope->name),
+				ZSTR_VAL(name),
+				ZSTR_VAL(Z_STR(deprecated->argv[0]))
+			);
+		}
+	} else {
+		if (deprecated->argc == 0) {
+			deprecation_message = zend_strpprintf(0, "Function %s() is deprecated", ZSTR_VAL(name));
+		} else if (deprecated->argc == 1) {
+			deprecation_message = zend_strpprintf(0, "Function %s() is deprecated %s", ZSTR_VAL(name), ZSTR_VAL(Z_STR(deprecated->argv[0])));
+		}
 	}
 
 	ZVAL_STRING(&fn_name, "trigger_error");

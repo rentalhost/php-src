@@ -7,4 +7,4 @@
 function test() {
 }
 --EXPECTF--
-Fatal error: <<Deprecated>> requires zero or one argument, 3 arguments given in %s
+Fatal error: <<Deprecated>> requires at most one argument, 3 arguments given in %s

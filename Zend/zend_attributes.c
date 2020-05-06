@@ -23,11 +23,11 @@ void zend_attribute_validate_phpcompilerattribute(zend_attribute *attr, int targ
 void zend_attribute_validate_deprecated_attribute(zend_attribute *attr, int target)
 {
 	if (attr->argc > 1) {
-		zend_error(E_COMPILE_ERROR, "<<Deprecated>> requires zero or one argument, %d arguments given", attr->argc);
+		zend_error(E_COMPILE_ERROR, "<<Deprecated>> requires at most one argument, %d arguments given", attr->argc);
 	}
 
 	if (attr->argc == 1 && Z_TYPE(attr->argv[0]) != IS_STRING) {
-		zend_error(E_COMPILE_ERROR, "<<Deprecated>> first argument $message must be a string", attr->argc);
+		zend_error(E_COMPILE_ERROR, "<<Deprecated>>: Argument #1 ($message) must be of type string, %s given", zend_zval_type_name(&attr->argv[0]));
 	}
 }
 
