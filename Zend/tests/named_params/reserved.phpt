@@ -10,8 +10,6 @@ function test($array) {
 test(array => []);
 
 ?>
---EXPECTF--
-Fatal error: Uncaught Error: Unknown named parameter $=> in %s:%d
-Stack trace:
-#0 {main}
-  thrown in %s on line %d
+--EXPECT--
+array(0) {
+}
