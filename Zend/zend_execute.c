@@ -1149,7 +1149,7 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_missing_arg_error(zend_execute_data *
 {
 	zend_execute_data *ptr = EX(prev_execute_data);
 
-	if (arg_num < EX(func)->common.required_num_args) {
+	if (arg_num < EX_NUM_ARGS()) {
 		zend_argument_error(zend_ce_argument_count_error, arg_num, "not passed");
 		return;
 	}
