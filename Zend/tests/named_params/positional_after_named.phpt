@@ -3,7 +3,7 @@ Cannot used positional parameter after named parameter
 --FILE--
 <?php
 
-test(a => 1, 2);
+test(a: 1, 2);
 
 ?>
 --EXPECTF--

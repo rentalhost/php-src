@@ -3,7 +3,7 @@ Mixing unpacking and named params (1)
 --FILE--
 <?php
 
-test(...[], a => 42);
+test(...[], a: 42);
 
 ?>
 --EXPECTF--

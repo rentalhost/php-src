@@ -10,13 +10,13 @@ function test2(...$a) {
 }
 
 try {
-    test(b => 42);
+    test(b: 42);
 } catch (Error $e) {
     echo $e->getMessage(), "\n";
 }
 
 try {
-    test2(a => 42);
+    test2(a: 42);
 } catch (Error $e) {
     echo $e->getMessage(), "\n";
 }

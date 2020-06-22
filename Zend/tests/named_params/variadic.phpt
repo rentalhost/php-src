@@ -15,15 +15,15 @@ function test2(&...$refs) {
     foreach ($refs as &$ref) $ref++;
 }
 
-test(b => 'b', a => 'a', c => 'c', extra => 'extra');
+test(b: 'b', a: 'a', c: 'c', extra: 'extra');
 echo "\n";
 
-test('a', 'b', 'c', d => 'd');
+test('a', 'b', 'c', d: 'd');
 echo "\n";
 
 $x = 0;
 $y = 0;
-test2(x => $x, y => $y);
+test2(x: $x, y: $y);
 var_dump($x, $y);
 
 ?>
