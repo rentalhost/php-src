@@ -3297,6 +3297,7 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 					opline = zend_emit_op(NULL, ZEND_CHECK_FUNC_ARG, NULL, NULL);
 					if (arg_name) {
 						opline->op2_type = IS_CONST;
+						zend_string_addref(arg_name);
 						opline->op2.constant = zend_add_literal_string(&arg_name);
 						opline->result.num = zend_alloc_cache_slots(2);
 					} else {
@@ -3344,6 +3345,7 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 		opline = zend_emit_op(NULL, opcode, &arg_node, NULL);
 		if (arg_name) {
 			opline->op2_type = IS_CONST;
+			zend_string_addref(arg_name);
 			opline->op2.constant = zend_add_literal_string(&arg_name);
 			opline->result.num = zend_alloc_cache_slots(2);
 		} else {

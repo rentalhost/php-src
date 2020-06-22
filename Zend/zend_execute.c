@@ -3732,7 +3732,10 @@ static void cleanup_unfinished_calls(zend_execute_data *execute_data, uint32_t o
 					case ZEND_SEND_VAR_NO_REF_EX:
 					case ZEND_SEND_USER:
 						if (level == 0) {
-							ZEND_CALL_NUM_ARGS(call) = opline->op2.num;
+							/* For named args, the number of arguments is up to date. */
+							if (opline->op2_type != IS_CONST) {
+								ZEND_CALL_NUM_ARGS(call) = opline->op2.num;
+							}
 							do_exit = 1;
 						}
 						break;
@@ -3781,6 +3784,9 @@ static void cleanup_unfinished_calls(zend_execute_data *execute_data, uint32_t o
 
 			if (ZEND_CALL_INFO(call) & ZEND_CALL_RELEASE_THIS) {
 				OBJ_RELEASE(Z_OBJ(call->This));
+			}
+			if (ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS) {
+				zend_array_destroy(call->extra_named_params);
 			}
 			if (call->func->common.fn_flags & ZEND_ACC_CLOSURE) {
 				zend_object_release(ZEND_CLOSURE_OBJECT(call->func));

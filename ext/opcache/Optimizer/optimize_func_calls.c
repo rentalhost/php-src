@@ -230,8 +230,8 @@ void zend_optimize_func_calls(zend_op_array *op_array, zend_optimizer_ctx *ctx)
 			case ZEND_FETCH_STATIC_PROP_FUNC_ARG:
 			case ZEND_FETCH_OBJ_FUNC_ARG:
 			case ZEND_FETCH_DIM_FUNC_ARG:
-				if (call_stack[call - 1].func) {
-					ZEND_ASSERT(call_stack[call - 1].func_arg_num != (uint32_t)-1);
+				if (call_stack[call - 1].func
+						&& call_stack[call - 1].func_arg_num != (uint32_t)-1) {
 					if (ARG_SHOULD_BE_SENT_BY_REF(call_stack[call - 1].func, call_stack[call - 1].func_arg_num)) {
 						if (opline->opcode != ZEND_FETCH_STATIC_PROP_FUNC_ARG) {
 							opline->opcode -= 9;
@@ -274,6 +274,7 @@ void zend_optimize_func_calls(zend_op_array *op_array, zend_optimizer_ctx *ctx)
 				if (call_stack[call - 1].func) {
 					if (opline->op2_type == IS_CONST) {
 						call_stack[call - 1].try_inline = 0;
+						call_stack[call - 1].func_arg_num = (uint32_t)-1;
 						break;
 					}
 

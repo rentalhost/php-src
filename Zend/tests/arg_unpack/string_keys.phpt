@@ -15,4 +15,4 @@ try {
 
 ?>
 --EXPECT--
-string(42) "Cannot unpack Traversable with string keys"
+string(68) "Cannot use positional argument after named argument during unpacking"
