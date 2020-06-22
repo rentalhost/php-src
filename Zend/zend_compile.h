@@ -418,6 +418,7 @@ struct _zend_op_array {
 	uint32_t required_num_args;
 	zend_arg_info *arg_info;
 	HashTable *attributes;
+	HashTable *arg_names;
 	/* END of common elements */
 
 	int cache_size;     /* number of run_time_cache_slots * sizeof(void*) */
@@ -468,6 +469,7 @@ typedef struct _zend_internal_function {
 	uint32_t required_num_args;
 	zend_internal_arg_info *arg_info;
 	HashTable *attributes;
+	HashTable *arg_names;
 	/* END of common elements */
 
 	zif_handler handler;
@@ -491,7 +493,14 @@ union _zend_function {
 		uint32_t num_args;
 		uint32_t required_num_args;
 		zend_arg_info *arg_info;  /* index -1 represents the return value info, if any */
-		HashTable   *attributes;
+		HashTable *attributes;
+		/* Mapping from argument names to argument offset for named arguments.
+		 * To reduce memory usage, this is only used if either:
+		 *  * We need to preserve argument names from a parent method. (TODO)
+		 *  * There are many arguments. (TODO)
+		 * Otherwise, we will simplify perform a linear scan over the arg_info.
+		 */
+		HashTable *arg_names;
 	} common;
 
 	zend_op_array op_array;

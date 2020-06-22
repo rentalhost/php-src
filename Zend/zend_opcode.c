@@ -64,6 +64,7 @@ void init_op_array(zend_op_array *op_array, zend_uchar type, int initial_ops_siz
 	op_array->filename = zend_get_compiled_filename();
 	op_array->doc_comment = NULL;
 	op_array->attributes = NULL;
+	op_array->arg_names = NULL;
 
 	op_array->arg_info = NULL;
 	op_array->num_args = 0;
@@ -501,6 +502,10 @@ ZEND_API void destroy_op_array(zend_op_array *op_array)
 	}
 	if (op_array->attributes) {
 		zend_hash_release(op_array->attributes);
+	}
+	if (op_array->arg_names) {
+		zend_hash_destroy(op_array->arg_names);
+		efree(op_array->arg_names);
 	}
 	if (op_array->live_range) {
 		efree(op_array->live_range);

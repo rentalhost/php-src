@@ -524,6 +524,93 @@ static inheritance_status zend_do_perform_arg_type_hint_check(
 }
 /* }}} */
 
+static const char *get_arg_name(const zend_function *func, const zend_arg_info *info, size_t *len) {
+	if (func->type == ZEND_INTERNAL_FUNCTION) {
+		zend_internal_arg_info *internal_info = (zend_internal_arg_info *) info;
+		*len = strlen(internal_info->name);
+		return internal_info->name;
+	} else {
+		*len = ZSTR_LEN(info->name);
+		return ZSTR_VAL(info->name);
+	}
+}
+
+static void add_arg_name(
+		HashTable *ht, const zend_function *to, const zend_function *from,
+		zend_string *arg_name, uint32_t arg_offset) {
+	zval *existing_arg_offset_zv = zend_hash_find(ht, arg_name);
+	if (existing_arg_offset_zv) {
+		uint32_t existing_arg_offset = Z_LVAL_P(existing_arg_offset_zv);
+		if (existing_arg_offset != arg_offset) {
+			/* Determine whether the conflict is with "to" itself, or because we inherited from
+			 * a different prototype method. */
+			/* TODO: Determine the exact conflicting interface/method */
+			size_t to_arg_name_len;
+			const char *to_arg_name =
+				get_arg_name(to, &to->common.arg_info[existing_arg_offset], &to_arg_name_len);
+			zend_bool is_direct_conflict =
+				ZSTR_LEN(arg_name) == to_arg_name_len
+				&& !memcmp(ZSTR_VAL(arg_name), to_arg_name, to_arg_name_len);
+			zend_error_noreturn(E_COMPILE_ERROR,
+				"Parameter $%s of %s::%s() at position #%" PRIu32 "%s conflicts with "
+				"parameter $%s of %s::%s() at position #%" PRIu32,
+				ZSTR_VAL(arg_name),
+				ZSTR_VAL(to->common.scope->name), ZSTR_VAL(to->common.function_name),
+				existing_arg_offset + 1,
+				is_direct_conflict ? "" : " (inherited from a different prototype method)",
+				ZSTR_VAL(arg_name),
+				ZSTR_VAL(from->common.scope->name), ZSTR_VAL(from->common.function_name),
+				arg_offset + 1);
+		}
+	} else {
+		zval arg_offset_zv;
+		ZVAL_LONG(&arg_offset_zv, arg_offset);
+		zend_hash_add_new(ht, arg_name, &arg_offset_zv);
+	}
+}
+
+static void add_arg_names(zend_function *to, const zend_function *from) {
+	zend_bool persistent = to->type == ZEND_INTERNAL_FUNCTION;
+	HashTable *ht = to->common.arg_names;
+	zend_string *name;
+	zval *val;
+
+	if (!ht) {
+		ht = pemalloc(sizeof(HashTable), persistent);
+		zend_hash_init(ht, to->common.num_args, NULL, NULL, persistent);
+	}
+
+	if (from->common.arg_names) {
+		ZEND_HASH_FOREACH_STR_KEY_VAL(from->common.arg_names, name, val) {
+			uint32_t arg_offset = Z_LVAL_P(val);
+			if (arg_offset >= to->common.num_args) {
+				/* Don't inherit argument names that have been subsumed by a variadic. */
+				continue;
+			}
+
+			add_arg_name(ht, to, from, name, arg_offset);
+		} ZEND_HASH_FOREACH_END();
+	} else {
+		for (uint32_t i = 0; i < from->common.num_args; i++) {
+			if (i >= to->common.num_args) {
+				/* Don't inherit argument names that have been subsumed by a variadic. */
+				continue;
+			}
+
+			const zend_arg_info *info = &from->common.arg_info[i];
+			const zend_internal_arg_info *internal_info = (const zend_internal_arg_info *) info;
+			zend_string *arg_name = from->type == ZEND_INTERNAL_FUNCTION
+				? zend_string_init(internal_info->name, strlen(internal_info->name), persistent)
+				: zend_string_copy(info->name);
+			add_arg_name(ht, to, from, arg_name, i);
+			zend_string_release(arg_name);
+		}
+	}
+	if (!to->common.arg_names) {
+		to->common.arg_names = ht;
+	}
+}
+
 /* For abstract trait methods, proto_scope will differ from proto->common.scope,
  * as self will refer to the self of the class the trait is used in, not the trait
  * the method was declared in. */
@@ -533,7 +620,7 @@ static inheritance_status zend_do_perform_implementation_check(
 {
 	uint32_t i, num_args, proto_num_args, fe_num_args;
 	inheritance_status status, local_status;
-	zend_bool proto_is_variadic, fe_is_variadic;
+	zend_bool proto_is_variadic, fe_is_variadic, needs_arg_name_table;
 
 	/* Checks for constructors only if they are declared in an interface,
 	 * or explicitly marked as abstract
@@ -570,6 +657,7 @@ static inheritance_status zend_do_perform_implementation_check(
 	proto_num_args = proto->common.num_args + proto_is_variadic;
 	fe_num_args = fe->common.num_args + fe_is_variadic;
 	num_args = MAX(proto_num_args, fe_num_args);
+	needs_arg_name_table = proto->common.arg_names != NULL;
 
 	status = INHERITANCE_SUCCESS;
 	for (i = 0; i < num_args; i++) {
@@ -605,6 +693,27 @@ static inheritance_status zend_do_perform_implementation_check(
 		if (ZEND_ARG_SEND_MODE(fe_arg_info) != ZEND_ARG_SEND_MODE(proto_arg_info)) {
 			return INHERITANCE_ERROR;
 		}
+
+		/* Only check this for non-variadic parameters. */
+		if (i < fe->common.num_args && !needs_arg_name_table) {
+			size_t proto_arg_name_len, fe_arg_name_len;
+			const char *proto_arg_name = get_arg_name(proto, proto_arg_info, &proto_arg_name_len);
+			const char *fe_arg_name = get_arg_name(fe, fe_arg_info, &fe_arg_name_len);
+			if (proto_arg_name_len != fe_arg_name_len
+					|| memcmp(proto_arg_name, fe_arg_name, fe_arg_name_len) != 0) {
+				needs_arg_name_table = 1;
+			}
+		}
+	}
+
+	if (needs_arg_name_table) {
+		/* Parameter names are not the same! */
+		/* TODO: HACK!!! */
+		zend_function *fe_ = (zend_function *) fe;
+		if (!fe->common.arg_names) {
+			add_arg_names(fe_, fe);
+		}
+		add_arg_names(fe_, proto);
 	}
 
 	/* Check return type compatibility, but only if the prototype already specifies

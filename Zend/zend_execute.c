@@ -138,6 +138,7 @@ ZEND_API const zend_internal_function zend_pass_function = {
 	0,                      /* required_num_args */
 	NULL,                   /* arg_info          */
 	NULL,                   /* attributes        */
+	NULL,                   /* arg_names         */
 	ZEND_FN(pass),          /* handler           */
 	NULL,                   /* module            */
 	{NULL,NULL,NULL,NULL}   /* reserved          */
@@ -4294,7 +4295,16 @@ static zend_always_inline uint32_t zend_get_arg_offset_by_name(
 		return *(uintptr_t *)(cache_slot + 1);
 	}
 
-	// TODO: Use a hash table?
+	if (fbc->common.arg_names) {
+		zval *zv = zend_hash_find(fbc->common.arg_names, arg_name);
+		if (zv) {
+			*cache_slot = fbc;
+			*(uintptr_t *)(cache_slot + 1) = Z_LVAL_P(zv);
+			return Z_LVAL_P(zv);
+		}
+		return (uint32_t) - 1;
+	}
+
 	uint32_t num_args = fbc->common.num_args;
 	if (fbc->type == ZEND_USER_FUNCTION) {
 		for (uint32_t i = 0; i < num_args; i++) {
