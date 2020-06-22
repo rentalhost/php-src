@@ -1,5 +1,5 @@
 --TEST--
-Require parameter not passed
+Required parameter not passed
 --FILE--
 <?php
 

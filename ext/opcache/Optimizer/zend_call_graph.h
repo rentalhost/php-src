@@ -42,6 +42,7 @@ struct _zend_call_info {
 	zend_func_info         *clone;
 	zend_bool               recursive;
 	zend_bool               send_unpack;  /* Parameters passed by SEND_UNPACK or SEND_ARRAY */
+	zend_bool               named_args;   /* Function has named arguments */
 	int                     num_args;
 	zend_send_arg_info      arg_info[1];
 };

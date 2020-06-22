@@ -5289,7 +5289,7 @@ ZEND_VM_HOT_TYPE_SPEC_HANDLER(ZEND_RECV, op->op2.num == MAY_BE_ANY, ZEND_RECV_NO
 	USE_OPLINE
 	uint32_t arg_num = opline->op1.num;
 
-	if (UNEXPECTED(arg_num > EX_NUM_ARGS())) {
+	if (UNEXPECTED(arg_num > EX_NUM_ARGS()) || Z_ISUNDEF_P(EX_VAR(opline->result.var))) {
 		ZEND_VM_DISPATCH_TO_HELPER(zend_missing_arg_helper, arg_num, arg_num);
 	}
 

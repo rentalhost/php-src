@@ -70,6 +70,7 @@ array(1) {
 }
 a = a, b = b, c = c
 a = a, b = b, c = c
+a = a, b = b, c = c
 Cannot use positional argument after named argument during unpacking
 Named parameter $a overwrites previous argument
 

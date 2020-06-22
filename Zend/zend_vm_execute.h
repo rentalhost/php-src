@@ -2188,7 +2188,7 @@ static ZEND_VM_HOT ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_RECV_NOTYPE_SPEC_H
 	USE_OPLINE
 	uint32_t arg_num = opline->op1.num;
 
-	if (UNEXPECTED(arg_num > EX_NUM_ARGS())) {
+	if (UNEXPECTED(arg_num > EX_NUM_ARGS()) || Z_ISUNDEF_P(EX_VAR(opline->result.var))) {
 		ZEND_VM_TAIL_CALL(zend_missing_arg_helper_SPEC(arg_num ZEND_OPCODE_HANDLER_ARGS_PASSTHRU_CC));
 	}
 
