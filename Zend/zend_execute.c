@@ -4302,7 +4302,7 @@ static zend_always_inline uint32_t zend_get_arg_offset_by_name(
 			*(uintptr_t *)(cache_slot + 1) = Z_LVAL_P(zv);
 			return Z_LVAL_P(zv);
 		}
-		return (uint32_t) - 1;
+		goto not_found;
 	}
 
 	uint32_t num_args = fbc->common.num_args;
@@ -4327,6 +4327,7 @@ static zend_always_inline uint32_t zend_get_arg_offset_by_name(
 		}
 	}
 
+not_found:
 	if (fbc->common.fn_flags & ZEND_ACC_VARIADIC) {
 		*cache_slot = fbc;
 		*(uintptr_t *)(cache_slot + 1) = fbc->common.num_args;

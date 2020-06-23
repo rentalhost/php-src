@@ -45,6 +45,41 @@ class D implements I, J, K {
 (new D)->method(j: 42);
 (new D)->method(k: 42);
 (new D)->method(d: 42);
+echo "\n";
+
+trait T {
+    abstract public function method($t);
+}
+class X {
+    public function method($x) {
+        echo __METHOD__ . ": $x\n";
+    }
+}
+class Y extends X {
+    use T;
+
+    public function method($y) {
+        echo __METHOD__ . ": $y\n";
+    }
+}
+
+(new Y)->method(t: 42);
+(new Y)->method(x: 42);
+(new Y)->method(y: 42);
+echo "\n";
+
+// TODO: This case currently leaks.
+/*trait T2 {
+    public function method($t) {
+        echo __METHOD__ . ": $t\n";
+    }
+}
+class Z extends X {
+    use T2;
+}
+
+(new Z)->method(x: 42);
+(new Z)->method(t: 42);*/
 
 ?>
 --EXPECT--
@@ -58,3 +93,7 @@ D::method: 42
 D::method: 42
 D::method: 42
 D::method: 42
+
+Y::method: 42
+Y::method: 42
+Y::method: 42
