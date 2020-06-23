@@ -47,6 +47,21 @@ class D implements I, J, K {
 (new D)->method(d: 42);
 echo "\n";
 
+interface U {
+    public function test($foo, $bar);
+}
+class V implements U {
+    public function test($a, $b) {
+        echo __METHOD__ . ": $a, $b\n";
+    }
+}
+
+(new V)->test(a: "foo", b: "bar");
+(new V)->test(foo: "foo", bar: "bar");
+// Weird, but works:
+(new V)->test(a: "foo", bar: "bar");
+echo "\n";
+
 trait T {
     abstract public function method($t);
 }
@@ -93,6 +108,10 @@ D::method: 42
 D::method: 42
 D::method: 42
 D::method: 42
+
+V::test: foo, bar
+V::test: foo, bar
+V::test: foo, bar
 
 Y::method: 42
 Y::method: 42
