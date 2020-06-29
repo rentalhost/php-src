@@ -8292,7 +8292,7 @@ ZEND_VM_HANDLER(158, ZEND_CALL_TRAMPOLINE, ANY, ANY)
 	zend_array *args = NULL;
 	zend_function *fbc = EX(func);
 	zval *ret = EX(return_value);
-	uint32_t call_info = EX_CALL_INFO() & (ZEND_CALL_NESTED | ZEND_CALL_TOP | ZEND_CALL_RELEASE_THIS);
+	uint32_t call_info = EX_CALL_INFO() & (ZEND_CALL_NESTED | ZEND_CALL_TOP | ZEND_CALL_RELEASE_THIS | ZEND_CALL_HAS_EXTRA_NAMED_PARAMS);
 	uint32_t num_args = EX_NUM_ARGS();
 	zend_execute_data *call;
 
@@ -8324,6 +8324,10 @@ ZEND_VM_HANDLER(158, ZEND_CALL_TRAMPOLINE, ANY, ANY)
 		ZVAL_ARR(ZEND_CALL_ARG(call, 2), args);
 	} else {
 		ZVAL_EMPTY_ARRAY(ZEND_CALL_ARG(call, 2));
+	}
+	if (UNEXPECTED(call_info & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+		SEPARATE_ARRAY(ZEND_CALL_ARG(call, 2));
+		zend_hash_copy(Z_ARRVAL_P(ZEND_CALL_ARG(call, 2)), call->extra_named_params, zval_add_ref);
 	}
 	zend_free_trampoline(fbc);
 	fbc = call->func;

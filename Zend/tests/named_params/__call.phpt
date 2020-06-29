@@ -8,20 +8,30 @@ class Test {
         $this->{'_'.$method}(...$args);
     }
 
+    public static function __callStatic(string $method, array $args) {
+        (new static)->{'_'.$method}(...$args);
+    }
+
     private function _method($a = 'a', $b = 'b') {
         echo "a: $a, b: $b\n";
     }
 }
 
+$obj = new class { public function __toString() { return "STR"; } };
+
 $test = new Test;
-$test->method('A', 'B');
 $test->method(a: 'A', b: 'B');
+$test->method(b: 'B');
+$test->method(b: $obj);
+Test::method(a: 'A', b: 'B');
+Test::method(b: 'B');
+Test::method(b: $obj);
 
 ?>
---EXPECTF--
+--EXPECT--
 a: A, b: B
-
-Fatal error: Uncaught Error: Unknown named parameter $a in %s:%d
-Stack trace:
-#0 {main}
-  thrown in %s on line %d
+a: a, b: B
+a: a, b: STR
+a: A, b: B
+a: a, b: B
+a: a, b: STR
