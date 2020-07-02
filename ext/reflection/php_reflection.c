@@ -6494,7 +6494,12 @@ ZEND_METHOD(ReflectionAttribute, getArguments)
 			RETURN_THROWS();
 		}
 
-		add_next_index_zval(return_value, &tmp);
+		if (attr->data->args[i].name) {
+			/* We ensured at compile-time that there are no duplicate parameter names. */
+			zend_hash_add_new(Z_ARRVAL_P(return_value), attr->data->args[i].name, &tmp);
+		} else {
+			add_next_index_zval(return_value, &tmp);
+		}
 	}
 }
 /* }}} */
