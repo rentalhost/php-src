@@ -3466,11 +3466,12 @@ void zend_compile_dynamic_call(znode *result, znode *name_node, zend_ast *args_a
 }
 /* }}} */
 
-static inline zend_bool zend_args_contain_unpack(zend_ast_list *args) /* {{{ */
+static inline zend_bool zend_args_contain_unpack_or_named(zend_ast_list *args) /* {{{ */
 {
 	uint32_t i;
 	for (i = 0; i < args->children; ++i) {
-		if (args->child[i]->kind == ZEND_AST_UNPACK) {
+		zend_ast *arg = args->child[i];
+		if (arg->kind == ZEND_AST_UNPACK || arg->kind == ZEND_AST_NAMED_ARG) {
 			return 1;
 		}
 	}
@@ -4020,7 +4021,7 @@ int zend_try_compile_special_func(znode *result, zend_string *lcname, zend_ast_l
 		return FAILURE;
 	}
 
-	if (zend_args_contain_unpack(args)) {
+	if (zend_args_contain_unpack_or_named(args)) {
 		return FAILURE;
 	}
 

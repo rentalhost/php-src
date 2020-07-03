@@ -15,7 +15,15 @@ try {
     echo $e->getMessage(), "\n";
 }
 
+// TODO: Should this work?
+try {
+    call_user_func('strlen', str: 'foo');
+} catch (ArgumentCountError $e) {
+    echo $e->getMessage(), "\n";
+}
+
 ?>
 --EXPECT--
 array_merge() does not accept unknown named parameters
 array_diff_key() does not accept unknown named parameters
+call_user_func() does not accept unknown named parameters

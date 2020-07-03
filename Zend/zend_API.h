@@ -1726,7 +1726,7 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_value_error(uint32_t arg_num
 #define Z_PARAM_VARIADIC(spec, dest, dest_num) \
 	Z_PARAM_VARIADIC_EX(spec, dest, dest_num, 0)
 
-#define Z_PARAM_VARIADIC_WITH_NAMED(spec, dest, dest_num, dest_named) do { \
+#define Z_PARAM_VARIADIC_WITH_NAMED(dest, dest_num, dest_named) do { \
 		int _num_varargs = _num_args - _i; \
 		if (EXPECTED(_num_varargs > 0)) { \
 			dest = _real_arg + 1; \

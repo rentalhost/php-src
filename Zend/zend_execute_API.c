@@ -788,6 +788,7 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 					return FAILURE;
 				}
 
+				/* TODO */
 				/*if (ARG_SHOULD_BE_SENT_BY_REF(func, arg_num)) {
 				}*/
 				ZVAL_COPY(target, val);
