@@ -278,7 +278,9 @@ static HashTable *zend_persist_attributes(HashTable *attributes)
 			zend_accel_store_interned_string(copy->lcname);
 
 			for (i = 0; i < copy->argc; i++) {
-				zend_accel_store_interned_string(copy->args[i].name);
+				if (copy->args[i].name) {
+					zend_accel_store_interned_string(copy->args[i].name);
+				}
 				zend_persist_zval(&copy->args[i].value);
 			}
 
