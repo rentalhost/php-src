@@ -3874,6 +3874,7 @@ ZEND_VM_HOT_HANDLER(129, ZEND_DO_ICALL, ANY, ANY, SPEC(RETVAL))
 	ret = RETURN_VALUE_USED(opline) ? EX_VAR(opline->result.var) : &retval;
 	ZVAL_NULL(ret);
 
+	/* TODO: Don't use the ICALL specialization if named params are used? */
 	if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_MAY_HAVE_UNDEF)) {
 		if (zend_handle_icall_undef_args(call) == FAILURE) {
 			ZEND_VM_C_GOTO(do_icall_cleanup);
@@ -3897,6 +3898,9 @@ ZEND_VM_HOT_HANDLER(129, ZEND_DO_ICALL, ANY, ANY, SPEC(RETVAL))
 ZEND_VM_C_LABEL(do_icall_cleanup):
 	EG(current_execute_data) = execute_data;
 	zend_vm_stack_free_args(call);
+	if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+		zend_array_destroy(call->extra_named_params);
+	}
 	zend_vm_stack_free_call_frame(call);
 
 	if (!RETURN_VALUE_USED(opline)) {
@@ -4008,6 +4012,9 @@ ZEND_VM_HOT_HANDLER(131, ZEND_DO_FCALL_BY_NAME, ANY, ANY, SPEC(RETVAL))
 
 ZEND_VM_C_LABEL(fcall_by_name_end):
 		zend_vm_stack_free_args(call);
+		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+			zend_array_destroy(call->extra_named_params);
+		}
 		zend_vm_stack_free_call_frame(call);
 
 		if (!RETURN_VALUE_USED(opline)) {
