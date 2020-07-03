@@ -283,6 +283,14 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_wrong_callback_error(int num, char *e
 }
 /* }}} */
 
+ZEND_API ZEND_COLD void ZEND_FASTCALL zend_unexpected_extra_named_error(void)
+{
+	const char *space;
+	const char *class_name = get_active_class_name(&space);
+	zend_argument_count_error("%s%s%s() does not accept unknown named parameters",
+		class_name, space, get_active_function_name());
+}
+
 static ZEND_COLD void ZEND_FASTCALL zend_argument_error_variadic(zend_class_entry *error_ce, uint32_t arg_num, const char *format, va_list va) /* {{{ */
 {
 	const char *space;
@@ -927,6 +935,11 @@ static int zend_parse_va_args(uint32_t num_args, const char *type_spec, va_list 
 				}
 				/* mark the beginning of varargs */
 				post_varargs = max_num_args;
+
+				if (ZEND_CALL_INFO(EG(current_execute_data)) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS) {
+					zend_unexpected_extra_named_error();
+					return FAILURE;
+				}
 				break;
 
 			default:

@@ -1240,6 +1240,8 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_wrong_parameter_class_or_null_error(i
 ZEND_API ZEND_COLD void ZEND_FASTCALL zend_wrong_parameter_string_or_class_error(int num, const char *name, zval *arg);
 ZEND_API ZEND_COLD void ZEND_FASTCALL zend_wrong_parameter_string_or_class_or_null_error(int num, const char *name, zval *arg);
 ZEND_API ZEND_COLD void ZEND_FASTCALL zend_wrong_callback_error(int num, char *error);
+ZEND_API ZEND_COLD void ZEND_FASTCALL zend_unexpected_extra_named_error(void);
+
 ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_error(zend_class_entry *error_ce, uint32_t arg_num, const char *format, ...);
 ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_type_error(uint32_t arg_num, const char *format, ...);
 ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_value_error(uint32_t arg_num, const char *format, ...);
@@ -1253,6 +1255,7 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_value_error(uint32_t arg_num
 #define ZPP_ERROR_WRONG_COUNT                   6
 #define ZPP_ERROR_WRONG_STRING_OR_CLASS         7
 #define ZPP_ERROR_WRONG_STRING_OR_CLASS_OR_NULL 8
+#define ZPP_ERROR_UNEXPECTED_EXTRA_NAMED        9
 
 #define ZEND_PARSE_PARAMETERS_START_EX(flags, min_num_args, max_num_args) do { \
 		const int _flags = (flags); \
@@ -1311,6 +1314,8 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_value_error(uint32_t arg_num
 					zend_wrong_parameter_string_or_class_error(_i, _error, _arg); \
 				} else if (_error_code == ZPP_ERROR_WRONG_STRING_OR_CLASS_OR_NULL) { \
 					zend_wrong_parameter_string_or_class_or_null_error(_i, _error, _arg); \
+				} else if (_error_code == ZPP_ERROR_UNEXPECTED_EXTRA_NAMED) { \
+					zend_unexpected_extra_named_error(); \
 				} \
 			} \
 			failure; \
@@ -1707,10 +1712,30 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_value_error(uint32_t arg_num
 			dest = NULL; \
 			dest_num = 0; \
 		} \
+		if (UNEXPECTED(ZEND_CALL_INFO(execute_data) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) { \
+			_error_code = ZPP_ERROR_UNEXPECTED_EXTRA_NAMED; \
+			break; \
+		} \
 	} while (0);
 
 #define Z_PARAM_VARIADIC(spec, dest, dest_num) \
 	Z_PARAM_VARIADIC_EX(spec, dest, dest_num, 0)
+
+#define Z_PARAM_VARIADIC_WITH_NAMED(spec, dest, dest_num, dest_named) do { \
+		int _num_varargs = _num_args - _i; \
+		if (EXPECTED(_num_varargs > 0)) { \
+			dest = _real_arg + 1; \
+			dest_num = _num_varargs; \
+		} else { \
+			dest = NULL; \
+			dest_num = 0; \
+		} \
+		if (ZEND_CALL_INFO(execute_data) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS) { \
+			dest_named = execute_data->extra_named_params; \
+		} else { \
+			dest_named = NULL; \
+		} \
+	} while (0);
 
 #define Z_PARAM_STR_OR_ARRAY_HT_EX(dest_str, dest_ht, allow_null) \
 	Z_PARAM_PROLOGUE(0, 0); \
