@@ -6504,7 +6504,7 @@ ZEND_METHOD(ReflectionAttribute, getArguments)
 }
 /* }}} */
 
-static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zval *args, uint32_t argc) /* {{{ */
+static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zval *args, uint32_t argc, HashTable *named_params) /* {{{ */
 {
 	zend_function *ctor = ce->constructor;
 	ZEND_ASSERT(ctor != NULL);
@@ -6514,7 +6514,27 @@ static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zv
 		return FAILURE;
 	}
 
-	zend_call_known_instance_method(ctor, obj, NULL, argc, args);
+	{
+		zval retval;
+		zend_fcall_info_named fci_named;
+		zend_fcall_info_cache fcic;
+
+		fci_named.fci.size = sizeof(zend_fcall_info_named);
+		fci_named.fci.object = obj;
+		fci_named.fci.retval = &retval;
+		fci_named.fci.param_count = argc;
+		fci_named.fci.params = args;
+		fci_named.fci.no_separation = 1;
+		fci_named.named_params = named_params;
+		ZVAL_UNDEF(&fci_named.fci.function_name); /* Unused */
+
+		fcic.function_handler = ctor;
+		fcic.object = obj;
+		fcic.called_scope = obj->ce;
+
+		zend_call_function(&fci_named.fci, &fcic);
+	}
+
 	if (EG(exception)) {
 		zend_object_store_ctor_failed(obj);
 		return FAILURE;
@@ -6524,7 +6544,8 @@ static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zv
 }
 /* }}} */
 
-static void attribute_ctor_cleanup(zval *obj, zval *args, uint32_t argc) /* {{{ */
+static void attribute_ctor_cleanup(
+		zval *obj, zval *args, uint32_t argc, HashTable *named_params) /* {{{ */
 {
 	if (obj) {
 		zval_ptr_dtor(obj);
@@ -6538,6 +6559,10 @@ static void attribute_ctor_cleanup(zval *obj, zval *args, uint32_t argc) /* {{{ 
 		}
 
 		efree(args);
+	}
+
+	if (named_params) {
+		zend_array_destroy(named_params);
 	}
 }
 /* }}} */
@@ -6554,8 +6579,7 @@ ZEND_METHOD(ReflectionAttribute, newInstance)
 	zval obj;
 
 	zval *args = NULL;
-	uint32_t count;
-	uint32_t argc = 0;
+	HashTable *named_params = NULL;
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		RETURN_THROWS();
@@ -6612,31 +6636,40 @@ ZEND_METHOD(ReflectionAttribute, newInstance)
 		RETURN_THROWS();
 	}
 
-	count = attr->data->argc;
+	uint32_t argc = 0;
+	if (attr->data->argc) {
+		args = emalloc(attr->data->argc * sizeof(zval));
 
-	if (count) {
-		args = emalloc(count * sizeof(zval));
-
-		for (argc = 0; argc < attr->data->argc; argc++) {
-			if (FAILURE == zend_get_attribute_value(&args[argc], attr->data, argc, attr->scope)) {
-				attribute_ctor_cleanup(&obj, args, argc);
+		for (uint32_t i = 0; i < attr->data->argc; i++) {
+			zval val;
+			if (FAILURE == zend_get_attribute_value(&val, attr->data, i, attr->scope)) {
+				attribute_ctor_cleanup(&obj, args, i, named_params);
 				RETURN_THROWS();
+			}
+			if (attr->data->args[i].name) {
+				if (!named_params) {
+					named_params = zend_new_array(0);
+				}
+				zend_hash_add_new(named_params, attr->data->args[i].name, &val);
+			} else {
+				ZVAL_COPY_VALUE(&args[i], &val);
+				argc++;
 			}
 		}
 	}
 
 	if (ce->constructor) {
-		if (FAILURE == call_attribute_constructor(ce, Z_OBJ(obj), args, argc)) {
-			attribute_ctor_cleanup(&obj, args, argc);
+		if (FAILURE == call_attribute_constructor(ce, Z_OBJ(obj), args, argc, named_params)) {
+			attribute_ctor_cleanup(&obj, args, argc, named_params);
 			RETURN_THROWS();
 		}
-	} else if (argc) {
-		attribute_ctor_cleanup(&obj, args, argc);
+	} else if (argc || named_params) {
+		attribute_ctor_cleanup(&obj, args, argc, named_params);
 		zend_throw_error(NULL, "Attribute class '%s' does not have a constructor, cannot pass arguments", ZSTR_VAL(ce->name));
 		RETURN_THROWS();
 	}
 
-	attribute_ctor_cleanup(NULL, args, argc);
+	attribute_ctor_cleanup(NULL, args, argc, named_params);
 
 	RETURN_COPY_VALUE(&obj);
 }

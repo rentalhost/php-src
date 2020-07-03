@@ -1,5 +1,5 @@
 --TEST--
-Named params on internal functions: Variadic functions
+Named params on internal functions: Variadic functions that don't support extra named args
 --FILE--
 <?php
 

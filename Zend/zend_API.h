@@ -50,6 +50,11 @@ typedef struct _zend_fcall_info {
 	uint32_t param_count;
 } zend_fcall_info;
 
+typedef struct _zend_fcall_info_named {
+	zend_fcall_info fci;
+	HashTable *named_params;
+} zend_fcall_info_named;
+
 typedef struct _zend_fcall_info_cache {
 	zend_function *function_handler;
 	zend_class_entry *calling_scope;

@@ -4337,7 +4337,7 @@ not_found:
 	return (uint32_t) -1;
 }
 
-static zval * ZEND_FASTCALL zend_handle_named_arg(
+zval * ZEND_FASTCALL zend_handle_named_arg(
 		zend_execute_data **call_ptr, zend_string *arg_name,
 		uint32_t *arg_num_ptr, void **cache_slot) {
 	zend_execute_data *call = *call_ptr;
