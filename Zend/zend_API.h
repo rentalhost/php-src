@@ -499,12 +499,15 @@ ZEND_API int add_property_zval_ex(zval *arg, const char *key, size_t key_len, zv
 #define add_property_zval(__arg, __key, __value) add_property_zval_ex(__arg, __key, strlen(__key), __value)
 
 
-ZEND_API int _call_user_function_ex(zval *object, zval *function_name, zval *retval_ptr, uint32_t param_count, zval params[], int no_separation);
+ZEND_API int _call_user_function_impl(zval *object, zval *function_name, zval *retval_ptr, uint32_t param_count, zval params[], HashTable *named_params, int no_separation);
 
 #define call_user_function(function_table, object, function_name, retval_ptr, param_count, params) \
-	_call_user_function_ex(object, function_name, retval_ptr, param_count, params, 1)
+	_call_user_function_impl(object, function_name, retval_ptr, param_count, params, NULL, 1)
 #define call_user_function_ex(function_table, object, function_name, retval_ptr, param_count, params, no_separation, symbol_table) \
-	_call_user_function_ex(object, function_name, retval_ptr, param_count, params, no_separation)
+	_call_user_function_impl(object, function_name, retval_ptr, param_count, params, NULL, no_separation)
+
+#define call_user_function_named(function_table, object, function_name, retval_ptr, param_count, params, named_params) \
+	_call_user_function_impl(object, function_name, retval_ptr, param_count, params, named_params, 1)
 
 ZEND_API extern const zend_fcall_info empty_fcall_info;
 ZEND_API extern const zend_fcall_info_cache empty_fcall_info_cache;
@@ -570,14 +573,14 @@ ZEND_API int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci
  * called_scope must be provided for instance and static method calls. */
 ZEND_API void zend_call_known_function(
 		zend_function *fn, zend_object *object, zend_class_entry *called_scope, zval *retval_ptr,
-		uint32_t param_count, zval *params);
+		uint32_t param_count, zval *params, HashTable *named_params);
 
 /* Call the provided zend_function instance method on an object. */
 static zend_always_inline void zend_call_known_instance_method(
 		zend_function *fn, zend_object *object, zval *retval_ptr,
 		uint32_t param_count, zval *params)
 {
-	zend_call_known_function(fn, object, object->ce, retval_ptr, param_count, params);
+	zend_call_known_function(fn, object, object->ce, retval_ptr, param_count, params, NULL);
 }
 
 static zend_always_inline void zend_call_known_instance_method_with_0_params(

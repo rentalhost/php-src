@@ -619,7 +619,7 @@ ZEND_API int zval_update_constant(zval *pp) /* {{{ */
 }
 /* }}} */
 
-int _call_user_function_ex(zval *object, zval *function_name, zval *retval_ptr, uint32_t param_count, zval params[], int no_separation) /* {{{ */
+int _call_user_function_impl(zval *object, zval *function_name, zval *retval_ptr, uint32_t param_count, zval params[], HashTable *named_params, int no_separation) /* {{{ */
 {
 	zend_fcall_info fci;
 
@@ -629,7 +629,7 @@ int _call_user_function_ex(zval *object, zval *function_name, zval *retval_ptr, 
 	fci.retval = retval_ptr;
 	fci.param_count = param_count;
 	fci.params = params;
-	fci.named_params = NULL;
+	fci.named_params = named_params;
 	fci.no_separation = (zend_bool) no_separation;
 
 	return zend_call_function(&fci, NULL);
@@ -733,8 +733,14 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 	}
 
 	for (i=0; i<fci->param_count; i++) {
-		zval *param;
+		zval *param = ZEND_CALL_ARG(call, i+1);
 		zval *arg = &fci->params[i];
+		if (UNEXPECTED(Z_ISUNDEF_P(arg))) {
+			/* Allow forwarding undef slots. This is only used by Closure::__invoke(). */
+			ZVAL_UNDEF(param);
+			ZEND_ADD_CALL_FLAG(call, ZEND_CALL_MAY_HAVE_UNDEF);
+			continue;
+		}
 
 		if (ARG_SHOULD_BE_SENT_BY_REF(func, i + 1)) {
 			if (UNEXPECTED(!Z_ISREF_P(arg))) {
@@ -764,7 +770,6 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 			}
 		}
 
-		param = ZEND_CALL_ARG(call, i+1);
 		ZVAL_COPY(param, arg);
 	}
 
@@ -834,6 +839,9 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 		}
 		EG(current_execute_data) = call->prev_execute_data;
 		zend_vm_stack_free_args(call);
+		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+			zend_array_release(call->extra_named_params);
+		}
 
 		if (EG(exception)) {
 			zval_ptr_dtor(fci->retval);
@@ -879,7 +887,7 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 
 ZEND_API void zend_call_known_function(
 		zend_function *fn, zend_object *object, zend_class_entry *called_scope, zval *retval_ptr,
-		uint32_t param_count, zval *params)
+		uint32_t param_count, zval *params, HashTable *named_params)
 {
 	zval retval;
 	zend_fcall_info fci;
@@ -892,7 +900,7 @@ ZEND_API void zend_call_known_function(
 	fci.retval = retval_ptr ? retval_ptr : &retval;
 	fci.param_count = param_count;
 	fci.params = params;
-	fci.named_params = NULL;
+	fci.named_params = named_params;
 	fci.no_separation = 1;
 	ZVAL_UNDEF(&fci.function_name); /* Unused */
 

@@ -4306,7 +4306,8 @@ static zend_always_inline uint32_t zend_get_arg_offset_by_name(
 	}
 
 	uint32_t num_args = fbc->common.num_args;
-	if (fbc->type == ZEND_USER_FUNCTION) {
+	if (EXPECTED(fbc->type == ZEND_USER_FUNCTION)
+			|| EXPECTED(fbc->common.fn_flags & ZEND_ACC_USER_ARG_INFO)) {
 		for (uint32_t i = 0; i < num_args; i++) {
 			zend_arg_info *arg_info = &fbc->op_array.arg_info[i];
 			if (zend_string_equals(arg_name, arg_info->name)) {
@@ -4401,6 +4402,11 @@ zval * ZEND_FASTCALL zend_handle_named_arg(
 
 static int zend_handle_icall_undef_args(zend_execute_data *call) {
 	zend_function *fbc = call->func;
+	if (fbc->common.fn_flags & ZEND_ACC_USER_ARG_INFO) {
+		/* Magic function, let it deal with it. */
+		return SUCCESS;
+	}
+
 	uint32_t num_args = ZEND_CALL_NUM_ARGS(call);
 	for (uint32_t i = 0; i < num_args; i++) {
 		zval *arg = ZEND_CALL_VAR_NUM(call, i);

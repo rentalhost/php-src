@@ -6517,26 +6517,7 @@ static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zv
 		return FAILURE;
 	}
 
-	{
-		zval retval;
-		zend_fcall_info fci;
-		zend_fcall_info_cache fcic;
-
-		fci.size = sizeof(zend_fcall_info);
-		fci.object = obj;
-		fci.retval = &retval;
-		fci.param_count = argc;
-		fci.params = args;
-		fci.no_separation = 1;
-		fci.named_params = named_params;
-		ZVAL_UNDEF(&fci.function_name); /* Unused */
-
-		fcic.function_handler = ctor;
-		fcic.object = obj;
-		fcic.called_scope = obj->ce;
-
-		zend_call_function(&fci, &fcic);
-	}
+	zend_call_known_function(ctor, obj, obj->ce, NULL, argc, args, named_params);
 
 	if (EG(exception)) {
 		zend_object_store_ctor_failed(obj);

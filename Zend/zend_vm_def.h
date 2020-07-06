@@ -2833,11 +2833,14 @@ ZEND_VM_HOT_HELPER(zend_leave_helper, ANY, ANY)
 #ifdef ZEND_PREFER_RELOAD
 			call_info = EX_CALL_INFO();
 #endif
-			if (UNEXPECTED(call_info & (ZEND_CALL_HAS_SYMBOL_TABLE|ZEND_CALL_FREE_EXTRA_ARGS))) {
+			if (UNEXPECTED(call_info & (ZEND_CALL_HAS_SYMBOL_TABLE|ZEND_CALL_FREE_EXTRA_ARGS|ZEND_CALL_HAS_EXTRA_NAMED_PARAMS))) {
 				if (UNEXPECTED(call_info & ZEND_CALL_HAS_SYMBOL_TABLE)) {
 					zend_clean_and_cache_symbol_table(EX(symbol_table));
 				}
 				zend_vm_stack_free_extra_args_ex(call_info, execute_data);
+				if (UNEXPECTED(call_info & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+					zend_array_destroy(EX(extra_named_params));
+				}
 			}
 			if (UNEXPECTED(call_info & ZEND_CALL_CLOSURE)) {
 				OBJ_RELEASE(ZEND_CLOSURE_OBJECT(EX(func)));
@@ -3989,7 +3992,7 @@ ZEND_VM_HOT_HANDLER(131, ZEND_DO_FCALL_BY_NAME, ANY, ANY, SPEC(RETVAL))
 
 		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_MAY_HAVE_UNDEF)) {
 			if (zend_handle_icall_undef_args(call) == FAILURE) {
-			EG(current_execute_data) = execute_data;
+				EG(current_execute_data) = execute_data;
 				ZEND_VM_C_GOTO(fcall_by_name_end);
 			}
 		}
@@ -4116,6 +4119,9 @@ ZEND_VM_HOT_HANDLER(60, ZEND_DO_FCALL, ANY, ANY, SPEC(RETVAL))
 
 ZEND_VM_C_LABEL(fcall_end):
 		zend_vm_stack_free_args(call);
+		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+			zend_array_destroy(call->extra_named_params);
+		}
 		if (!RETURN_VALUE_USED(opline)) {
 			i_zval_ptr_dtor(ret);
 		}
