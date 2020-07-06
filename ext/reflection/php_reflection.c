@@ -1834,6 +1834,7 @@ ZEND_METHOD(ReflectionFunction, invoke)
 	fci.retval = &retval;
 	fci.param_count = num_args;
 	fci.params = params;
+	fci.named_params = NULL;
 	fci.no_separation = 1;
 
 	fcc.function_handler = fptr;
@@ -1897,6 +1898,7 @@ ZEND_METHOD(ReflectionFunction, invokeArgs)
 	fci.retval = &retval;
 	fci.param_count = argc;
 	fci.params = params;
+	fci.named_params = NULL;
 	fci.no_separation = 1;
 
 	fcc.function_handler = fptr;
@@ -3261,6 +3263,7 @@ static void reflection_method_invoke(INTERNAL_FUNCTION_PARAMETERS, int variadic)
 	fci.retval = &retval;
 	fci.param_count = argc;
 	fci.params = params;
+	fci.named_params = NULL;
 	fci.no_separation = 1;
 
 	fcc.function_handler = mptr;
@@ -6516,23 +6519,23 @@ static int call_attribute_constructor(zend_class_entry *ce, zend_object *obj, zv
 
 	{
 		zval retval;
-		zend_fcall_info_named fci_named;
+		zend_fcall_info fci;
 		zend_fcall_info_cache fcic;
 
-		fci_named.fci.size = sizeof(zend_fcall_info_named);
-		fci_named.fci.object = obj;
-		fci_named.fci.retval = &retval;
-		fci_named.fci.param_count = argc;
-		fci_named.fci.params = args;
-		fci_named.fci.no_separation = 1;
-		fci_named.named_params = named_params;
-		ZVAL_UNDEF(&fci_named.fci.function_name); /* Unused */
+		fci.size = sizeof(zend_fcall_info);
+		fci.object = obj;
+		fci.retval = &retval;
+		fci.param_count = argc;
+		fci.params = args;
+		fci.no_separation = 1;
+		fci.named_params = named_params;
+		ZVAL_UNDEF(&fci.function_name); /* Unused */
 
 		fcic.function_handler = ctor;
 		fcic.object = obj;
 		fcic.called_scope = obj->ce;
 
-		zend_call_function(&fci_named.fci, &fcic);
+		zend_call_function(&fci, &fcic);
 	}
 
 	if (EG(exception)) {

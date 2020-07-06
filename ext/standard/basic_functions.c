@@ -1570,7 +1570,7 @@ PHP_FUNCTION(call_user_func)
 
 	ZEND_PARSE_PARAMETERS_START(1, -1)
 		Z_PARAM_FUNC(fci, fci_cache)
-		Z_PARAM_VARIADIC('*', fci.params, fci.param_count)
+		Z_PARAM_VARIADIC_WITH_NAMED(fci.params, fci.param_count, fci.named_params)
 	ZEND_PARSE_PARAMETERS_END();
 
 	fci.retval = &retval;

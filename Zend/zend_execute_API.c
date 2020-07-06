@@ -629,6 +629,7 @@ int _call_user_function_ex(zval *object, zval *function_name, zval *retval_ptr, 
 	fci.retval = retval_ptr;
 	fci.param_count = param_count;
 	fci.params = params;
+	fci.named_params = NULL;
 	fci.no_separation = (zend_bool) no_separation;
 
 	return zend_call_function(&fci, NULL);
@@ -655,8 +656,7 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 		return FAILURE; /* we would result in an instable executor otherwise */
 	}
 
-	ZEND_ASSERT(fci->size == sizeof(zend_fcall_info)
-		|| fci->size == sizeof(zend_fcall_info_named));
+	ZEND_ASSERT(fci->size == sizeof(zend_fcall_info));
 
 	/* Initialize execute_data */
 	if (!EG(current_execute_data)) {
@@ -768,32 +768,29 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 		ZVAL_COPY(param, arg);
 	}
 
-	if (fci->size == sizeof(zend_fcall_info_named)) {
-		HashTable *named_params = ((zend_fcall_info_named *) fci)->named_params;
-		if (named_params) {
-			zend_string *name;
-			zval *val;
-			ZEND_HASH_FOREACH_STR_KEY_VAL(named_params, name, val) {
-				ZEND_ASSERT(name && "named_params may only contain named params");
+	if (fci->named_params) {
+		zend_string *name;
+		zval *val;
+		ZEND_HASH_FOREACH_STR_KEY_VAL(fci->named_params, name, val) {
+			ZEND_ASSERT(name && "named_params may only contain named params");
 
-				void *cache_slot = NULL;
-				uint32_t arg_num;
-				zval *target = zend_handle_named_arg(&call, name, &arg_num, &cache_slot);
-				if (!target) {
-					zend_vm_stack_free_args(call);
-					zend_vm_stack_free_call_frame(call);
-					if (EG(current_execute_data) == &dummy_execute_data) {
-						EG(current_execute_data) = dummy_execute_data.prev_execute_data;
-					}
-					return FAILURE;
+			void *cache_slot = NULL;
+			uint32_t arg_num;
+			zval *target = zend_handle_named_arg(&call, name, &arg_num, &cache_slot);
+			if (!target) {
+				zend_vm_stack_free_args(call);
+				zend_vm_stack_free_call_frame(call);
+				if (EG(current_execute_data) == &dummy_execute_data) {
+					EG(current_execute_data) = dummy_execute_data.prev_execute_data;
 				}
+				return FAILURE;
+			}
 
-				/* TODO */
-				/*if (ARG_SHOULD_BE_SENT_BY_REF(func, arg_num)) {
-				}*/
-				ZVAL_COPY(target, val);
-			} ZEND_HASH_FOREACH_END();
-		}
+			/* TODO */
+			/*if (ARG_SHOULD_BE_SENT_BY_REF(func, arg_num)) {
+			}*/
+			ZVAL_COPY(target, val);
+		} ZEND_HASH_FOREACH_END();
 	}
 
 	if (UNEXPECTED(func->op_array.fn_flags & ZEND_ACC_CLOSURE)) {
@@ -895,6 +892,7 @@ ZEND_API void zend_call_known_function(
 	fci.retval = retval_ptr ? retval_ptr : &retval;
 	fci.param_count = param_count;
 	fci.params = params;
+	fci.named_params = NULL;
 	fci.no_separation = 1;
 	ZVAL_UNDEF(&fci.function_name); /* Unused */
 
