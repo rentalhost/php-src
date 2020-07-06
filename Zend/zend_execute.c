@@ -3618,7 +3618,7 @@ ZEND_API void zend_init_execute_data(zend_execute_data *execute_data, zend_op_ar
 }
 /* }}} */
 
-static zend_execute_data *zend_vm_stack_copy_call_frame(zend_execute_data *call, uint32_t passed_args, uint32_t additional_args) /* {{{ */
+zend_execute_data *zend_vm_stack_copy_call_frame(zend_execute_data *call, uint32_t passed_args, uint32_t additional_args) /* {{{ */
 {
 	zend_execute_data *new_call;
 	int used_stack = (EG(vm_stack_top) - (zval*)call) + additional_args;
@@ -3651,16 +3651,6 @@ static zend_execute_data *zend_vm_stack_copy_call_frame(zend_execute_data *call,
 	}
 
 	return new_call;
-}
-/* }}} */
-
-static zend_always_inline void zend_vm_stack_extend_call_frame(zend_execute_data **call, uint32_t passed_args, uint32_t additional_args) /* {{{ */
-{
-	if (EXPECTED((uint32_t)(EG(vm_stack_end) - EG(vm_stack_top)) > additional_args)) {
-		EG(vm_stack_top) += additional_args;
-	} else {
-		*call = zend_vm_stack_copy_call_frame(*call, passed_args, additional_args);
-	}
 }
 /* }}} */
 

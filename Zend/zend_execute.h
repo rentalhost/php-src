@@ -289,6 +289,19 @@ static zend_always_inline void zend_vm_stack_free_call_frame(zend_execute_data *
 	zend_vm_stack_free_call_frame_ex(ZEND_CALL_INFO(call), call);
 }
 
+zend_execute_data *zend_vm_stack_copy_call_frame(
+	zend_execute_data *call, uint32_t passed_args, uint32_t additional_args);
+
+static zend_always_inline void zend_vm_stack_extend_call_frame(
+	zend_execute_data **call, uint32_t passed_args, uint32_t additional_args)
+{
+	if (EXPECTED((uint32_t)(EG(vm_stack_end) - EG(vm_stack_top)) > additional_args)) {
+		EG(vm_stack_top) += additional_args;
+	} else {
+		*call = zend_vm_stack_copy_call_frame(*call, passed_args, additional_args);
+	}
+}
+
 /* services */
 ZEND_API const char *get_active_class_name(const char **space);
 ZEND_API const char *get_active_function_name(void);

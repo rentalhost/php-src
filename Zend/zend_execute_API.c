@@ -797,6 +797,7 @@ cleanup_args:
 					goto cleanup_args;
 				}
 
+				zend_vm_stack_extend_call_frame(&call, arg_num - 1, 1);
 				target = ZEND_CALL_ARG(call, arg_num);
 			}
 

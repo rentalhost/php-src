@@ -13,6 +13,18 @@ $test_ref = function(&$ref) {
     $ref++;
 };
 
+class Test {
+    public function __construct($a = 'a', $b = 'b', $c = 'c') {
+        if (func_num_args() != 0) {
+            echo "a = $a, b = $b, c = $c\n";
+        }
+    }
+
+    public function method($a = 'a', $b = 'b', $c = 'c') {
+        echo "a = $a, b = $b, c = $c\n";
+    }
+}
+
 call_user_func($test, 'A', c: 'C');
 call_user_func($test, c: 'C', a: 'A');
 call_user_func($test, c: 'C');
@@ -26,6 +38,17 @@ $test->__invoke('A', c: 'C');
 $test_variadic->__invoke('A', c: 'C');
 $test->call(new class {}, 'A', c: 'C');
 $test_variadic->call(new class {}, 'A', c: 'C');
+echo "\n";
+
+$rf = new ReflectionFunction($test);
+$rf->invoke('A', c: 'C');
+$rf->invokeArgs(['A', 'c' => 'C']);
+$rm = new ReflectionMethod(Test::class, 'method');
+$rm->invoke(new Test, 'A', c: 'C');
+$rm->invokeArgs(new Test, ['A', 'c' => 'C']);
+$rc = new ReflectionClass(Test::class);
+$rc->newInstance('A', c: 'C');
+$rc->newInstanceArgs(['A', 'c' => 'C']);
 
 ?>
 --EXPECTF--
@@ -63,3 +86,10 @@ array(2) {
   ["c"]=>
   string(1) "C"
 }
+
+a = A, b = b, c = C
+a = A, b = b, c = C
+a = A, b = b, c = C
+a = A, b = b, c = C
+a = A, b = b, c = C
+a = A, b = b, c = C
