@@ -308,6 +308,7 @@ static void user_stream_create_object(struct php_user_stream_wrapper *uwrap, php
 		fci.retval = &retval;
 		fci.param_count = 0;
 		fci.params = NULL;
+		fci.named_params = NULL;
 		fci.no_separation = 1;
 
 		fcc.function_handler = uwrap->ce->constructor;
