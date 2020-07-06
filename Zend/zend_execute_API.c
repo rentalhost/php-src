@@ -753,6 +753,7 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 					zend_param_must_be_ref(func, i + 1);
 					if (UNEXPECTED(EG(exception))) {
 						ZEND_CALL_NUM_ARGS(call) = i;
+cleanup_args:
 						zend_vm_stack_free_args(call);
 						zend_vm_stack_free_call_frame(call);
 						if (EG(current_execute_data) == &dummy_execute_data) {
@@ -774,27 +775,57 @@ int zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /
 	}
 
 	if (fci->named_params) {
-		zend_string *name;
-		zval *val;
-		ZEND_HASH_FOREACH_STR_KEY_VAL(fci->named_params, name, val) {
-			ZEND_ASSERT(name && "named_params may only contain named params");
+		ZEND_ASSERT(fci->no_separation && "Do we want to support separation?");
 
-			void *cache_slot = NULL;
-			uint32_t arg_num;
-			zval *target = zend_handle_named_arg(&call, name, &arg_num, &cache_slot);
-			if (!target) {
-				zend_vm_stack_free_args(call);
-				zend_vm_stack_free_call_frame(call);
-				if (EG(current_execute_data) == &dummy_execute_data) {
-					EG(current_execute_data) = dummy_execute_data.prev_execute_data;
+		zend_string *name;
+		zval *arg;
+		uint32_t arg_num = ZEND_CALL_NUM_ARGS(call) + 1;
+		zend_bool have_named_params = 0;
+		ZEND_HASH_FOREACH_STR_KEY_VAL(fci->named_params, name, arg) {
+			zval *target;
+			if (name) {
+				void *cache_slot = NULL;
+				have_named_params = 1;
+				target = zend_handle_named_arg(&call, name, &arg_num, &cache_slot);
+				if (!target) {
+					goto cleanup_args;
 				}
-				return FAILURE;
+			} else {
+				if (have_named_params) {
+					zend_throw_error(NULL,
+						"Cannot use positional argument after named argument");
+					goto cleanup_args;
+				}
+
+				target = ZEND_CALL_ARG(call, arg_num);
 			}
 
-			/* TODO */
-			/*if (ARG_SHOULD_BE_SENT_BY_REF(func, arg_num)) {
-			}*/
-			ZVAL_COPY(target, val);
+			if (ARG_SHOULD_BE_SENT_BY_REF(func, arg_num)) {
+				if (UNEXPECTED(!Z_ISREF_P(arg))) {
+					if (!fci->no_separation) {
+						/* TODO ? */
+					} else if (!ARG_MAY_BE_SENT_BY_REF(func, arg_num)) {
+						/* By-value send is not allowed -- emit a warning,
+						 * but still perform the call with a by-value send. */
+						zend_param_must_be_ref(func, arg_num);
+						if (UNEXPECTED(EG(exception))) {
+							goto cleanup_args;
+						}
+					}
+				}
+			} else {
+				if (Z_ISREF_P(arg) &&
+					!(func->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE)) {
+					/* don't separate references for __call */
+					arg = Z_REFVAL_P(arg);
+				}
+			}
+
+			ZVAL_COPY(target, arg);
+			if (!name) {
+				ZEND_CALL_NUM_ARGS(call)++;
+				arg_num++;
+			}
 		} ZEND_HASH_FOREACH_END();
 	}
 
