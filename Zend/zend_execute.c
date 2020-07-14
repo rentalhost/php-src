@@ -40,6 +40,7 @@
 #include "zend_inheritance.h"
 #include "zend_type_info.h"
 #include "zend_smart_str.h"
+#include "zend_attributes.h"
 
 /* Virtual current working directory support */
 #include "zend_virtual_cwd.h"
@@ -4300,10 +4301,21 @@ static zend_always_inline uint32_t zend_get_arg_offset_by_name(
 			|| EXPECTED(fbc->common.fn_flags & ZEND_ACC_USER_ARG_INFO)) {
 		for (uint32_t i = 0; i < num_args; i++) {
 			zend_arg_info *arg_info = &fbc->op_array.arg_info[i];
+
 			if (zend_string_equals(arg_name, arg_info->name)) {
 				*cache_slot = fbc;
 				*(uintptr_t *)(cache_slot + 1) = i;
 				return i;
+			}
+
+			if (fbc->common.attributes != NULL) {
+				zend_attribute *attribute = zend_get_parameter_attribute_str(fbc->common.attributes, "namealias", sizeof("namealias")-1, i);
+
+				if (attribute && zend_string_equals(arg_name, Z_STR(attribute->args[0].value) )) {
+					*cache_slot = fbc;
+					*(uintptr_t *)(cache_slot + 1) = i;
+					return i;
+				}
 			}
 		}
 	} else {
